@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Câmara hiperbárica — bolsão, inclinação e montagem | LTS/COPPE-UFRJ</title>
+<style>
+  :root{
+    --navy:#1f3864; --azul:#2e5c9a; --ambar:#c8860d; --ambar-bg:#fdf2d9;
+    --verm:#b00020; --verm-bg:#fbe3e6; --verde:#2e7d32; --verde-bg:#e3f0e4;
+    --cinza:#f4f6f9; --borda:#d7dde6; --texto:#22272e; --suave:#6b7580;
+    --entrada:#fffdf0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px 18px 60px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--texto);background:#fff;line-height:1.5}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 2px;color:var(--navy);letter-spacing:-.2px}
+  .sub{font-size:13px;color:var(--suave);margin:0}
+  .rule{height:3px;background:var(--ambar);width:96px;margin:12px 0 22px;border-radius:2px}
+  .grid{display:grid;grid-template-columns:minmax(330px,1fr) minmax(380px,1.15fr);gap:22px}
+  .grid3{display:grid;grid-template-columns:minmax(290px,1fr) minmax(290px,1fr) minmax(300px,1.1fr);gap:22px}
+  @media(max-width:980px){.grid,.grid3{grid-template-columns:1fr}}
+  .card{border:1px solid var(--borda);border-radius:8px;padding:16px 18px;background:#fff;margin-bottom:22px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--navy);
+    margin:0 0 14px;font-weight:700}
+  .card h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--azul);
+    margin:16px 0 8px;font-weight:700}
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .row label{flex:1;font-size:13px}
+  .row .u{font-size:11px;color:var(--suave);width:52px}
+  input[type=number]{width:106px;padding:6px 8px;border:1px solid var(--borda);border-radius:5px;
+    font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    text-align:right;background:var(--entrada)}
+  input[type=number]:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 2px rgba(46,92,154,.13)}
+  select{padding:6px 8px;border:1px solid var(--borda);border-radius:5px;font-size:13px;
+    background:var(--entrada);width:106px}
+  input[type=file]{font-size:11.5px;width:100%;margin-top:3px}
+  .par{background:var(--cinza);border-left:3px solid var(--azul);padding:7px 10px;
+    border-radius:0 5px 5px 0;margin:-2px 0 11px}
+  .par .t{font-size:10.5px;color:var(--azul);font-weight:700;text-transform:uppercase;
+    letter-spacing:.4px;margin-bottom:5px}
+  .sep{border:0;border-top:1px dashed var(--borda);margin:15px 0 13px}
+  .hint{font-size:11.5px;color:var(--suave);margin:-3px 0 11px}
+  .out{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:baseline;
+    padding:6px 0;border-bottom:1px solid #eef1f5;font-size:13px}
+  .out:last-child{border-bottom:0}
+  .out .k{color:var(--suave)}
+  .out .v{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-weight:600;font-size:13.5px;white-space:nowrap}
+  .big .v{font-size:21px;color:var(--navy)}
+  .est{background:var(--cinza);border-radius:6px;padding:10px 12px;margin-bottom:10px}
+  .est .t{font-size:11.5px;font-weight:700;color:var(--navy);text-transform:uppercase;
+    letter-spacing:.5px;margin-bottom:6px}
+  .flag{border-radius:6px;padding:10px 12px;font-size:12.5px;margin-top:12px;display:none}
+  .flag.on{display:block}
+  .ok{background:var(--verde-bg);color:var(--verde);border-left:4px solid var(--verde)}
+  .warn{background:var(--ambar-bg);color:#8a5c00;border-left:4px solid var(--ambar)}
+  .err{background:var(--verm-bg);color:var(--verm);border-left:4px solid var(--verm)}
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tab{flex:1;padding:7px 8px;font-size:12.5px;text-align:center;cursor:pointer;
+    border:1px solid var(--borda);border-radius:6px;background:var(--cinza);color:var(--suave)}
+  .tab.sel{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+  th{background:var(--navy);color:#fff;font-weight:600;padding:6px 8px;text-align:right}
+  th:first-child{text-align:left}
+  td{padding:5px 8px;text-align:right;border-bottom:1px solid #eef1f5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  td:first-child{text-align:left;font-family:inherit}
+  tr.sel td{background:var(--ambar-bg);font-weight:700}
+  .btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  button{flex:1;min-width:150px;padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--navy);border-radius:6px;background:var(--navy);color:#fff}
+  button:hover{background:#2a4a80}
+  button.alt{background:#fff;color:var(--navy)}
+  button.alt:hover{background:var(--cinza)}
+  .fonte{border-radius:6px;padding:8px 11px;font-size:12px;margin-top:8px;
+    background:var(--cinza);border-left:4px solid var(--suave)}
+  .fonte.tab{background:var(--verde-bg);border-left-color:var(--verde);color:var(--verde)}
+  .note{font-size:11.5px;color:var(--suave);margin-top:16px;padding-top:12px;border-top:1px solid var(--borda)}
+  .note b{color:var(--texto)}
+  code{background:var(--cinza);padding:1px 5px;border-radius:3px;font-size:11.5px}
+  pre{background:var(--cinza);padding:9px 11px;border-radius:5px;font-size:11px;
+    overflow-x:auto;margin:7px 0;line-height:1.45}
+  svg{width:100%;height:auto;display:block}
+  .nav{display:flex;gap:4px;margin-bottom:22px;border-bottom:2px solid var(--borda)}
+  .navtab{padding:9px 20px;font-size:13.5px;cursor:pointer;color:var(--suave);
+    border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;
+    margin-bottom:-2px;font-weight:600}
+  .navtab:hover{background:var(--cinza)}
+  .navtab.sel{color:var(--navy);background:#fff;border-color:var(--borda);
+    border-bottom:2px solid #fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Câmara hiperbárica — bolsão de ar, inclinação e montagem</h1>
+  <p class="sub">Ensaios de propagação dinâmica de colapso · LTS/COPPE-UFRJ
+    &nbsp;|&nbsp; três estados isotérmicos · fluidos <b>air</b> e <b>water</b></p>
+  <div class="rule"></div>
+
+  <!-- ============ NAVEGACAO ============ -->
+  <div class="nav">
+    <div class="navtab sel" data-aba="abaBolsao">Bolsão de ar</div>
+    <div class="navtab"     data-aba="abaMontagem">Inclinação e montagem</div>
+    <div class="navtab"     data-aba="abaDesenhos">Desenhos</div>
+  </div>
+
+  <!-- ============ ABA 1: BOLSAO ============ -->
+  <section id="abaBolsao" class="aba">
+  <div class="grid">
+  <div>
+    <!-- ============ GEOMETRIA ============ -->
+    <div class="card">
+      <h2>Geometria</h2>
+
+      <h3>Câmara</h3>
+      <div class="row"><label>Diâmetro interno</label>
+        <input type="number" id="Dc" value="380" step="1"><span class="u">mm</span></div>
+      <div class="row"><label>Comprimento</label>
+        <input type="number" id="Lc" value="5000" step="10"><span class="u">mm</span></div>
+
+      <h3>Duto</h3>
+      <div class="row"><label>Diâmetro externo</label>
+        <input type="number" id="De" value="73.03" step="0.01"><span class="u">mm</span></div>
+      <div class="row"><label>Espessura de parede</label>
+        <input type="number" id="tw" value="3.05" step="0.01"><span class="u">mm</span></div>
+      <div class="row"><label>Comprimento L&#8321; <span style="color:#6b7580">(colapsa)</span></label>
+        <input type="number" id="L1" value="1900" step="10"><span class="u">mm</span></div>
+      <div class="row"><label>Comprimento L&#8322;</label>
+        <input type="number" id="L2" value="2300" step="10"><span class="u">mm</span></div>
+
+      <h3>Buckle arrestor</h3>
+      <div class="row"><label>Espessura</label>
+        <input type="number" id="tba" value="9" step="0.1"><span class="u">mm</span></div>
+      <div class="row"><label>Comprimento</label>
+        <input type="number" id="Lba" value="200" step="5"><span class="u">mm</span></div>
+
+      <hr class="sep">
+      <div class="row"><label>Pressão de teste P&#8321;</label>
+        <input type="number" id="Pt" value="15.75" step="0.05"><span class="u">MPa</span></div>
+      <div class="row"><label>Referência</label>
+        <select id="Pref">
+          <option value="man" selected>manométrica</option>
+          <option value="abs">absoluta</option>
+        </select><span class="u"></span></div>
+      <div class="row"><label>Pressão de referência P&#8320;</label>
+        <input type="number" id="P0" value="0.101325" step="0.001"><span class="u">MPa</span></div>
+      <div class="row"><label>Temperatura</label>
+        <input type="number" id="Tc" value="25" step="0.5"><span class="u">°C</span></div>
+    </div>
+
+    <!-- ============ DADOS TERMODINAMICOS ============ -->
+    <div class="card">
+      <h2>Massa específica — CoolProp</h2>
+      <div class="row"><label><b>air</b></label>
+        <select id="uAr">
+          <option value="1e-6">Pa</option><option value="1e-3">kPa</option>
+          <option value="0.1">bar</option><option value="1" selected>MPa</option>
+        </select><span class="u">unid. P</span></div>
+      <input type="file" id="fAr" accept=".csv,.txt,.dat,.tsv">
+      <div class="fonte" id="srcAr">Sem arquivo &mdash; usando <b>gás ideal</b> (R = 287,05 J/kg&middot;K)</div>
+      <div style="height:14px"></div>
+      <div class="row"><label><b>water</b></label>
+        <select id="uAg">
+          <option value="1e-6">Pa</option><option value="1e-3">kPa</option>
+          <option value="0.1">bar</option><option value="1" selected>MPa</option>
+        </select><span class="u">unid. P</span></div>
+      <input type="file" id="fAg" accept=".csv,.txt,.dat,.tsv">
+      <div class="fonte" id="srcAg">Sem arquivo &mdash; usando <b>módulo volumétrico</b>
+        (K = 2200 MPa, &rho;&#8320; = 997 kg/m&sup3;)</div>
+      <div class="note" style="margin-top:16px">
+        <b>Formato.</b> Separador <code>;</code>, com cabeçalho. A coluna de massa
+        específica é localizada pelo nome (<code>rho</code>); sem isso, adota-se a
+        terceira coluna de quatro ou a segunda de duas. Vírgula decimal aceita.
+        <pre>P_abs_MPa;T_K;rho_kg_m3;v_m3_kg
+0,101325;298,15;1,1839;0,844666
+15,0;298,15;169,10;0,005914</pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ RESULTADOS DO BOLSAO ============ -->
+  <div>
+    <div class="card">
+      <h2>Bolsão de ar — três estados</h2>
+
+      <div class="tabs">
+        <div class="tab sel" id="tabA">V<sub>ar</sub> &rarr; &Delta;P</div>
+        <div class="tab"     id="tabB">&Delta;P &rarr; V<sub>ar</sub></div>
+      </div>
+
+      <div id="modoA">
+        <div class="par">
+          <div class="t">Bolsão a P₀ — os dois campos são sincronizados</div>
+          <div class="row"><label>Fração do volume de fluido</label>
+            <input type="number" id="fracAr" value="23" step="0.5"><span class="u">%</span></div>
+          <div class="row"><label>Volume direto</label>
+            <input type="number" id="VarL" value="126.12" step="1"><span class="u">L</span></div>
+        </div>
+      </div>
+      <div id="modoB" style="display:none">
+        <div class="row"><label>&Delta;P alvo <span style="color:#6b7580">(negativo)</span></label>
+          <input type="number" id="dPalvo" value="-5" step="0.5"><span class="u">%</span></div>
+      </div>
+
+      <div class="out big"><span class="k" id="lblPrinc">&Delta;P após o colapso</span>
+        <span class="v" id="oPrinc">&mdash;</span></div>
+      <div class="out"><span class="k" id="lblSec">Bolsão a P&#8320;</span>
+        <span class="v" id="oSec">&mdash;</span></div>
+
+      <hr class="sep">
+      <div class="out"><span class="k">Volume geométrico da câmara</span><span class="v" id="oVc">&mdash;</span></div>
+      <div class="out"><span class="k">Volume dos tubos + arrestor</span><span class="v" id="oVt">&mdash;</span></div>
+      <div class="out"><span class="k">Volume disponível para fluidos</span><span class="v" id="oVf">&mdash;</span></div>
+      <div class="out"><span class="k">&Delta;V liberado pelo colapso de L&#8321;</span><span class="v" id="odV">&mdash;</span></div>
+
+      <div style="height:14px"></div>
+      <div class="est">
+        <div class="t">Estado 0 &mdash; <span id="e0P"></span></div>
+        <div class="out"><span class="k">V bolsão (projeto)</span><span class="v" id="e0Var">&mdash;</span></div>
+        <div class="out"><span class="k">V água</span><span class="v" id="e0Vag">&mdash;</span></div>
+        <div class="out"><span class="k">massa de água <span style="color:#6b7580">(conservada)</span></span><span class="v" id="e0mag">&mdash;</span></div>
+      </div>
+      <div class="est">
+        <div class="t">Estado 1 &mdash; <span id="e1P"></span></div>
+        <div class="out"><span class="k">V água</span><span class="v" id="e1Vag">&mdash;</span></div>
+        <div class="out"><span class="k">V bolsão</span><span class="v" id="e1Var">&mdash;</span></div>
+        <div class="out"><span class="k">expansão do bolsão</span><span class="v" id="e1dV">&mdash;</span></div>
+        <div class="out"><span class="k">massa de ar</span><span class="v" id="e1mar">&mdash;</span></div>
+      </div>
+      <div class="est">
+        <div class="t">Estado 2 &mdash; pós-colapso</div>
+        <div class="out"><span class="k">P&#8322;</span><span class="v" id="e2P">&mdash;</span></div>
+        <div class="out"><span class="k">&Delta;P</span><span class="v" id="e2dP">&mdash;</span></div>
+        <div class="out"><span class="k">erro do balanço</span><span class="v" id="e2err">&mdash;</span></div>
+      </div>
+
+      <div class="flag" id="fErr"></div>
+      <div class="flag" id="fWarn"></div>
+      <div class="flag" id="fOk"></div>
+
+      <div class="btns">
+        <button id="btnAr">Baixar CSV &mdash; ar</button>
+        <button id="btnAgua" class="alt">Baixar CSV &mdash; água</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  </section>
+
+  <!-- ============ ABA 2: MONTAGEM ============ -->
+  <section id="abaMontagem" class="aba" style="display:none">
+  <!-- ============ INCLINACAO E MONTAGEM ============ -->
+  <div class="card">
+    <h2>Inclinação do duto e montagem na câmara</h2>
+
+    <div class="grid3">
+
+      <!-- entradas -->
+      <div>
+        <h3>Entradas</h3>
+        <div class="row"><label>Inclinação desejada</label>
+          <input type="number" id="incl" value="2" step="0.1"><span class="u">graus</span></div>
+        <div class="row"><label>Calço da extremidade baixa</label>
+          <input type="number" id="calco1" value="50" step="1"><span class="u">mm</span></div>
+        <p class="hint" style="margin-top:2px">A altura de calço é medida até a
+          <b>geratriz inferior</b> do duto na posição correspondente.</p>
+
+        <div class="par" style="margin-top:14px">
+          <div class="t">Fluido interno — campos sincronizados</div>
+          <div class="row"><label>Múltiplo de V<sub>1</sub></label>
+            <input type="number" id="fatV1" value="1.10" step="0.05"><span class="u">× V₁</span></div>
+          <div class="row"><label>Volume direto</label>
+            <input type="number" id="VintL" value="" step="0.1"><span class="u">L</span></div>
+        </div>
+        <p class="hint">V₁ é o volume interno do duto 1 (comprimento L₁), o trecho
+          que colapsa a montante do arrestor.</p>
+      </div>
+
+      <!-- cotas -->
+      <div>
+        <h3>Cotas de montagem</h3>
+        <div class="out"><span class="k">Comprimento total do duto</span><span class="v" id="oLt">&mdash;</span></div>
+        <div class="out"><span class="k">Desnível &Delta;h entre apoios</span><span class="v" id="odh">&mdash;</span></div>
+        <div class="out big"><span class="k">Calço da extremidade alta</span><span class="v" id="ocalco2">&mdash;</span></div>
+        <hr class="sep">
+        <h3 style="margin-top:0">Alturas de calço</h3>
+
+        <hr class="sep">
+        <div class="out"><span class="k">Calço 1 — extremidade baixa &nbsp;<span style="color:#6b7580">z = 0</span></span><span class="v" id="oc1">&mdash;</span></div>
+        <div class="out"><span class="k">Calço 2 — sob o arrestor &nbsp;<span style="color:#6b7580" id="oz2"></span></span><span class="v" id="oc2">&mdash;</span></div>
+        <div class="out"><span class="k">Calço 3 — extremidade alta &nbsp;<span style="color:#6b7580" id="oz3"></span></span><span class="v" id="oc3">&mdash;</span></div>
+        <div class="out"><span class="k">Calço 2 apoiando a face do arrestor</span><span class="v" id="oc2ba">&mdash;</span></div>
+        <div class="out"><span class="k">Topo do duto na extremidade alta</span><span class="v" id="ogs">&mdash;</span></div>
+
+        <hr class="sep">
+        <div class="out"><span class="k">Área do bolsão na seção</span><span class="v" id="oAar">&mdash;</span></div>
+        <div class="out"><span class="k">Altura do bolsão (do topo)</span><span class="v" id="ohar">&mdash;</span></div>
+        <div class="out big"><span class="k">Nível d'água na câmara</span><span class="v" id="oniv">&mdash;</span></div>
+        <div class="out"><span class="k">Folga sobre o topo do duto</span><span class="v" id="ofolga">&mdash;</span></div>
+
+        <div class="flag" id="gErr"></div>
+        <div class="flag" id="gWarn"></div>
+        <div class="flag" id="gOk"></div>
+      </div>
+
+      <!-- fluido interno + desenho -->
+      <div>
+        <h3>Distribuição do fluido interno</h3>
+        <div class="out"><span class="k">V&#8321; (interno do duto 1)</span><span class="v" id="oV1">&mdash;</span></div>
+        <div class="out"><span class="k">Volume de fluido interno</span><span class="v" id="oVint">&mdash;</span></div>
+        <div class="out"><span class="k">Preenchimento do duto</span><span class="v" id="oPreench">&mdash;</span></div>
+        <hr class="sep">
+        <div class="out"><span class="k">Totalmente cheio</span><span class="v" id="oLcheio">&mdash;</span></div>
+        <div class="out"><span class="k">Parcialmente cheio</span><span class="v" id="oLparc">&mdash;</span></div>
+        <div class="out"><span class="k">Totalmente vazio</span><span class="v" id="oLvazio">&mdash;</span></div>
+        <div class="out"><span class="k">Frente d'água em</span><span class="v" id="oFrente">&mdash;</span></div>
+        <div class="flag" id="iWarn"></div>
+
+      </div>
+
+    </div>
+
+    <div class="note">
+      <b>Hipóteses.</b> Câmara horizontal e superfície livre plana. O nível d'água é
+      obtido do bolsão no <b>Estado 0</b>, isto é, na condição atmosférica de montagem:
+      a área do bolsão na seção vale V<sub>ar</sub>/L<sub>câmara</sub>, e a altura sai
+      da inversão do segmento circular. Isso só vale enquanto o duto permanece
+      submerso em todo o comprimento — caso contrário a área de gás deixa de ser um
+      segmento puro e o painel avisa.<br><br>
+      A distribuição do fluido interno supõe superfície livre plana dentro do duto,
+      sem menisco. Quando existem os três trechos, o comprimento parcialmente cheio
+      vale <code>D<sub>i</sub>/tan θ</code>, independente do volume.
+    </div>
+  </div>
+</section>
+
+  <!-- ============ ABA 3: DESENHOS ============ -->
+  <section id="abaDesenhos" class="aba" style="display:none">
+    <div class="card">
+      <h2>Vista lateral da montagem</h2>
+      <div class="row" style="margin-bottom:6px">
+        <label style="flex:0 0 auto;font-size:12px">Exagero da escala vertical</label>
+        <input type="number" id="exag" value="4" step="0.5" style="width:70px"><span class="u">×</span>
+        <span class="hint" style="margin:0 0 0 10px">a câmara tem 13:1 de razão de
+          aspecto e o desnível é de poucos centésimos do comprimento: sem exagero
+          vertical o esquema fica ilegível</span>
+      </div>
+      <svg id="lat" viewBox="0 0 1040 300" aria-label="Vista lateral da montagem na câmara"></svg>
+      <p class="hint" style="margin-top:10px">Cotas impressas em milímetros reais.
+        Os três calços aparecem nas posições z = 0, z = L₁ (sob o arrestor) e z = L<sub>t</sub>.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Seção na extremidade alta</h2>
+        <svg id="sec" viewBox="0 0 260 240" aria-label="Seção transversal da câmara"></svg>
+        <p class="hint" style="margin-top:10px">Posição mais crítica: é onde o duto
+          fica mais próximo da superfície livre. A folga aparece na aba de montagem.</p>
+      </div>
+      <div class="card">
+        <h2>Resumo do que os desenhos mostram</h2>
+        <div class="out"><span class="k">Nível d'água na câmara</span><span class="v" id="dNiv">&mdash;</span></div>
+        <div class="out"><span class="k">Altura do bolsão (do topo)</span><span class="v" id="dHar">&mdash;</span></div>
+        <div class="out"><span class="k">Topo do duto na extremidade alta</span><span class="v" id="dGs">&mdash;</span></div>
+        <div class="out"><span class="k">Folga sobre o topo do duto</span><span class="v" id="dFolga">&mdash;</span></div>
+        <hr class="sep">
+        <div class="out"><span class="k">Calços 1 / 2 / 3</span><span class="v" id="dCalcos">&mdash;</span></div>
+        <div class="out"><span class="k">Inclinação</span><span class="v" id="dIncl">&mdash;</span></div>
+        <hr class="sep">
+        <div class="out"><span class="k">Fluido interno: cheio</span><span class="v" id="dLch">&mdash;</span></div>
+        <div class="out"><span class="k">parcialmente cheio</span><span class="v" id="dLpc">&mdash;</span></div>
+        <div class="out"><span class="k">vazio</span><span class="v" id="dLvz">&mdash;</span></div>
+        <div class="out"><span class="k">Frente d'água em</span><span class="v" id="dFrente">&mdash;</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+var num = function(id){ return parseFloat($(id).value); };
+var R_AR = 287.05, K_W = 2200.0, RHO_W0 = 997.0;
+var modo = 'A';
+var d0Global = null, thGlobal = null;
+var ST = null;
+var TAB = { ar:null, ag:null };
+var sincronizando = false;    // trava contra laco infinito nos pares ligados
+
+function LT(v){ return (v*1e3).toFixed(2) + " L"; }
+function br(v,d){ return v.toFixed(d).replace('.', ','); }
+
+/* ============ leitura das tabelas CoolProp ============ */
+function parseTabela(texto, fatorMPa){
+  var linhas = texto.split(/\r?\n/), pts = [], i, s, c, iRho = -1, cab = false;
+  for (i = 0; i < linhas.length && i < 40; i++){
+    s = linhas[i].trim();
+    if (!s || s.charAt(0) === '#' || s.charAt(0) === '%') continue;
+    c = s.split(/[;\t,]+|\s{2,}/);
+    if (isFinite(parseFloat(c[0].replace(',','.')))) break;
+    var j;
+    for (j = 1; j < c.length; j++){
+      if (c[j].toLowerCase().indexOf('rho') >= 0 ||
+          c[j].toLowerCase().indexOf('dens') >= 0){ iRho = j; cab = true; break; }
+    }
+    if (cab) break;
+  }
+  for (i = 0; i < linhas.length; i++){
+    s = linhas[i].trim();
+    if (!s || s.charAt(0) === '#' || s.charAt(0) === '%') continue;
+    c = s.split(/[;\t]+|\s{2,}/).filter(function(x){ return x !== ''; });
+    if (c.length < 2) continue;
+    var k = iRho;
+    if (k < 0) k = (c.length >= 4) ? 2 : 1;
+    if (k >= c.length) continue;
+    var p = parseFloat(c[0].replace(',','.'));
+    var r = parseFloat(c[k].replace(',','.'));
+    if (!isFinite(p) || !isFinite(r) || r <= 0) continue;
+    pts.push([p*fatorMPa, r]);
+  }
+  pts.sort(function(a,b){ return a[0]-b[0]; });
+  var lim = [];
+  for (i = 0; i < pts.length; i++){
+    if (i === 0 || pts[i][0] > pts[i-1][0] + 1e-12) lim.push(pts[i]);
+  }
+  return lim.length >= 2 ? lim : null;
+}
+function interp(tab, P){
+  var n = tab.length, i, f;
+  if (P <= tab[0][0])   return tab[0][1];
+  if (P >= tab[n-1][0]) return tab[n-1][1];
+  for (i = 0; i < n-1; i++){
+    if (P >= tab[i][0] && P <= tab[i+1][0]){
+      f = (P - tab[i][0])/(tab[i+1][0] - tab[i][0]);
+      return tab[i][1] + f*(tab[i+1][1] - tab[i][1]);
+    }
+  }
+  return tab[n-1][1];
+}
+function fora(tab, P){ return tab && (P < tab[0][0] || P > tab[tab.length-1][0]); }
+function rhoAr(P){
+  if (TAB.ar) return interp(TAB.ar, P);
+  return P*1e6/(R_AR*(num('Tc') + 273.15));
+}
+function rhoAg(P){
+  if (TAB.ag) return interp(TAB.ag, P);
+  return RHO_W0*(1 + P/K_W);
+}
+
+/* ============ geometria (SI: m, m3) ============ */
+function geometria(){
+  var Dc = num('Dc')/1e3, Lc = num('Lc')/1e3;
+  var De = num('De')/1e3, tw = num('tw')/1e3;
+  var L1 = num('L1')/1e3, L2 = num('L2')/1e3;
+  var tba = num('tba')/1e3, Lba = num('Lba')/1e3;
+  var Pt = num('Pt'), P0 = num('P0'), Tc = num('Tc');
+  var abs = ($('Pref').value === 'abs');
+  var v = [Dc,Lc,De,tw,L1,Pt,P0], i;
+  for (i = 0; i < v.length; i++){ if (!isFinite(v[i]) || v[i] <= 0) return null; }
+  if (!isFinite(L2) || L2 < 0 || !isFinite(tba) || tba < 0 || !isFinite(Lba) || Lba < 0) return null;
+  if (!isFinite(Tc) || 2*tw >= De || De >= Dc) return null;
+
+  var Di = De - 2*tw, Lt = L1 + L2, Dba = Di + 2*tba;
+  if (Lt + Lba > Lc || Dba >= Dc) return null;
+
+  var Vc   = Math.PI*Dc*Dc/4*Lc;
+  var Vtub = Math.PI*De*De/4*Lt + Math.PI*Dba*Dba/4*Lba;
+  var Vf   = Vc - Vtub;
+  var dV   = Math.PI*Di*Di/4*L1;
+  var P1   = abs ? Pt : Pt + P0;
+  return {Dc:Dc,Lc:Lc,De:De,tw:tw,Di:Di,L1:L1,L2:L2,Lt:Lt,tba:tba,Lba:Lba,Dba:Dba,
+          Pt:Pt,P0:P0,P1:P1,Tc:Tc,abs:abs,Vc:Vc,Vtub:Vtub,Vf:Vf,dV:dV};
+}
+
+/* ============ segmento circular ============
+   Fracao da area de um circulo de raio R abaixo de uma corda a altura h do
+   topo (ou da base, por simetria). x = h/R, valido para 0 <= x <= 2.        */
+function fracSeg(x){
+  if (x <= 0) return 0;
+  if (x >= 2) return 1;
+  return (Math.acos(1-x) - (1-x)*Math.sqrt(2*x - x*x))/Math.PI;
+}
+function alturaSeg(f){
+  if (f <= 0) return 0;
+  if (f >= 1) return 2;
+  var lo = 0, hi = 2, i, m;
+  for (i = 0; i < 90; i++){
+    m = 0.5*(lo+hi);
+    if (fracSeg(m) < f) lo = m; else hi = m;
+  }
+  return 0.5*(lo+hi);
+}
+/* Area molhada de um circulo de raio R cuja superficie livre esta a uma
+   distancia d do centro (d > 0 acima do centro). */
+function areaMolhada(d, R){
+  if (d >= R)  return Math.PI*R*R;
+  if (d <= -R) return 0;
+  return R*R*Math.acos(-d/R) + d*Math.sqrt(R*R - d*d);
+}
+
+/* ============ tres estados ============ */
+function tresEstados(g, Var){
+  var Vag0 = g.Vf - Var;
+  if (Vag0 <= 0) return null;
+  var r_ag0 = rhoAg(g.P0), r_ar0 = rhoAr(g.P0);
+  var mAg = Vag0*r_ag0, mAr0 = Var*r_ar0;
+  var r_ag1 = rhoAg(g.P1), r_ar1 = rhoAr(g.P1);
+  var Vag1 = mAg/r_ag1, Var1 = g.Vf - Vag1;
+  if (Var1 <= 0) return null;
+  var mAr1 = Var1*r_ar1;
+  var Vf2 = g.Vf + g.dV;
+  var f = function(P2){ return mAg/rhoAg(P2) + mAr1/rhoAr(P2) - Vf2; };
+  var lo = g.P0/10, hi = g.P1, i, m;
+  if (f(lo)*f(hi) > 0) return null;
+  for (i = 0; i < 300; i++){
+    m = 0.5*(lo+hi);
+    if (f(m) > 0) lo = m; else hi = m;
+  }
+  var P2 = 0.5*(lo+hi);
+  var Vag2 = mAg/rhoAg(P2), Var2 = mAr1/rhoAr(P2);
+  return {Var:Var, Vag0:Vag0, mAg:mAg, mAr0:mAr0,
+          r_ag0:r_ag0, r_ar0:r_ar0, r_ag1:r_ag1, r_ar1:r_ar1,
+          Vag1:Vag1, Var1:Var1, mAr1:mAr1, dVar:Var1-Var,
+          P2:P2, dP:100*(P2-g.P1)/g.P1, Vag2:Vag2, Var2:Var2,
+          erro:Vag2+Var2-Vf2, r_ag2:rhoAg(P2), r_ar2:rhoAr(P2)};
+}
+function VarDeDP(g, dPalvo){
+  var lo = 1e-9, hi = 0.98*g.Vf, i, m, r;
+  for (i = 0; i < 300; i++){
+    m = 0.5*(lo+hi);
+    r = tresEstados(g, m);
+    if (!r){ hi = m; continue; }
+    if (r.dP < dPalvo) lo = m; else hi = m;
+  }
+  return 0.5*(lo+hi);
+}
+
+/* ============ sincronizacao de pares ligados ============
+   Cada par tem um campo RELATIVO e outro em volume absoluto. Editar um
+   recalcula o outro.
+
+   O parametro 'escala' diz em que unidade esta o campo relativo:
+       escala = 100  -> porcentagem da base   (bolsao de ar)
+       escala =   1  -> multiplo da base      (fluido interno)
+   Sem ele, um par de multiplo tratado como porcentagem erra por 100 vezes:
+   era esse o defeito que fazia o volume interno encolher ao se aumentar o
+   fator, e o desenho perder a agua.
+
+   'ultimaFonte' registra qual campo foi editado por ultimo. O calculo passa
+   a usar essa informacao em vez de preferir sempre o campo de volume: se a
+   sincronizacao falhar por qualquer motivo, o valor digitado continua sendo
+   o que vale.                                                              */
+var ultimaFonte = {};
+
+function ligaPar(idRel, idVol, baseFn, casasRel, casasVol, escala){
+  ultimaFonte[idVol] = idVol;
+  $(idRel).addEventListener('input', function(){
+    ultimaFonte[idVol] = idRel;
+    if (sincronizando) return;
+    var base = baseFn();
+    var f = parseFloat($(idRel).value);
+    if (!isFinite(base) || base <= 0 || !isFinite(f)) return;
+    sincronizando = true;
+    $(idVol).value = (f/escala*base*1e3).toFixed(casasVol);
+    sincronizando = false;
+  });
+  $(idVol).addEventListener('input', function(){
+    ultimaFonte[idVol] = idVol;
+    if (sincronizando) return;
+    var base = baseFn();
+    var V = parseFloat($(idVol).value);
+    if (!isFinite(base) || base <= 0 || !isFinite(V)) return;
+    sincronizando = true;
+    $(idRel).value = (escala*(V/1e3)/base).toFixed(casasRel);
+    sincronizando = false;
+  });
+}
+
+/* Valor efetivo de um par ligado, respeitando qual campo foi editado por
+   ultimo. Devolve o volume em mm3. */
+function volumeDoPar(idRel, idVol, base_m3, escala){
+  var usaRel = (ultimaFonte[idVol] === idRel);
+  var f = parseFloat($(idRel).value);
+  var V = parseFloat($(idVol).value);
+  var Vm3;
+  if (usaRel && isFinite(f) && f > 0){
+    Vm3 = f/escala*base_m3;
+    sincronizando = true;
+    $(idVol).value = (Vm3*1e3).toFixed(2);
+    sincronizando = false;
+  } else if (isFinite(V) && V > 0){
+    Vm3 = V/1e3;
+    sincronizando = true;
+    $(idRel).value = (escala*Vm3/base_m3).toFixed(3);
+    sincronizando = false;
+  } else {
+    return NaN;
+  }
+  return Vm3*1e9;   // m3 -> mm3
+}
+
+/* ============ calculo do bolsao ============ */
+function calc(){
+  var g = geometria();
+  var err = $('fErr'), warn = $('fWarn'), ok = $('fOk');
+  err.className = 'flag'; warn.className = 'flag'; ok.className = 'flag';
+  err.textContent = ''; warn.textContent = ''; ok.textContent = '';
+
+  if (!g){
+    err.className = 'flag on err';
+    err.textContent = 'Dados inconsistentes: confira diâmetros, espessura, comprimentos '
+                    + 'e pressões (os tubos e o arrestor devem caber na câmara).';
+    ST = null; montagem(); return;
+  }
+
+  var Var;
+  if (modo === 'A'){
+    var vDir = parseFloat($('VarL').value);
+    Var = (isFinite(vDir) && vDir > 0) ? vDir/1e3 : (num('fracAr')/100)*g.Vf;
+  } else {
+    var alvo = num('dPalvo');
+    if (!isFinite(alvo) || alvo >= 0){
+      err.className = 'flag on err';
+      err.textContent = 'O ΔP alvo deve ser negativo (o colapso sempre reduz a pressão).';
+      ST = null; montagem(); return;
+    }
+    Var = VarDeDP(g, alvo);
+    sincronizando = true;
+    $('VarL').value  = (Var*1e3).toFixed(2);
+    $('fracAr').value = (100*Var/g.Vf).toFixed(2);
+    sincronizando = false;
+  }
+
+  var r = tresEstados(g, Var);
+  if (!r){
+    err.className = 'flag on err';
+    err.textContent = 'Não foi possível fechar o balanço: o bolsão excede o volume de '
+                    + 'fluido ou as tabelas não cobrem a faixa de pressão necessária.';
+    ST = null; montagem(); return;
+  }
+  ST = g; ST.r = r;
+
+  if (modo === 'A'){
+    $('lblPrinc').textContent = 'ΔP após o colapso';
+    $('oPrinc').textContent   = br(r.dP,3) + " %";
+    $('lblSec').textContent   = 'Bolsão a P₀ / fração do fluido';
+    $('oSec').textContent     = LT(r.Var) + "  /  " + br(100*r.Var/g.Vf,1) + " %";
+  } else {
+    $('lblPrinc').textContent = 'Bolsão de ar a P₀';
+    $('oPrinc').textContent   = LT(r.Var);
+    $('lblSec').textContent   = 'Fração do fluido / da câmara';
+    $('oSec').textContent     = br(100*r.Var/g.Vf,1) + " %  /  " + br(100*r.Var/g.Vc,1) + " %";
+  }
+  $('oVc').textContent = LT(g.Vc);
+  $('oVt').textContent = LT(g.Vtub);
+  $('oVf').textContent = LT(g.Vf);
+  $('odV').textContent = LT(g.dV);
+
+  $('e0P').textContent   = "P₀ = " + br(g.P0,4) + " MPa";
+  $('e0Var').textContent = LT(r.Var);
+  $('e0Vag').textContent = LT(r.Vag0);
+  $('e0mag').textContent = br(r.mAg,2) + " kg";
+  $('e1P').textContent   = "P₁ = " + br(g.P1,4) + " MPa";
+  $('e1Vag').textContent = LT(r.Vag1);
+  $('e1Var').textContent = LT(r.Var1);
+  $('e1dV').textContent  = (r.dVar >= 0 ? "+" : "\u2212") + br(Math.abs(r.dVar)*1e3,2) + " L";
+  $('e1mar').textContent = br(r.mAr1,3) + " kg";
+  $('e2P').textContent   = br(r.P2,4) + " MPa";
+  $('e2dP').textContent  = br(r.dP,3) + " %";
+  $('e2err').textContent = r.erro.toExponential(2).replace('.', ',') + " m³";
+
+  if (fora(TAB.ar, r.P2) || fora(TAB.ar, g.P1) || fora(TAB.ar, g.P0)){
+    warn.className = 'flag on warn';
+    warn.textContent = 'A tabela de air não cobre toda a faixa (' + br(g.P0,4) + ' a '
+                     + br(g.P1,2) + ' MPa). Valores de borda mantidos constantes.';
+  } else if (fora(TAB.ag, r.P2) || fora(TAB.ag, g.P1) || fora(TAB.ag, g.P0)){
+    warn.className = 'flag on warn';
+    warn.textContent = 'A tabela de water não cobre toda a faixa. Valores de borda '
+                     + 'mantidos constantes.';
+  } else {
+    ok.className = 'flag on ok';
+    ok.textContent = 'Bolsão de ' + LT(r.Var) + ' a P₀ resulta em ΔP = ' + br(r.dP,2)
+                   + ' %, com a pressão caindo para ' + br(r.P2,3) + ' MPa.';
+  }
+  montagem();
+}
+
+/* ============ inclinacao, nivel e fluido interno ============ */
+function montagem(){
+  var gE = $('gErr'), gW = $('gWarn'), gO = $('gOk'), iW = $('iWarn');
+  [gE,gW,gO,iW].forEach(function(e){ e.className = 'flag'; e.textContent = ''; });
+  var ids = ['oLt','odh','ocalco2','oc1','oc2','oc3','oc2ba','ogs','oAar','ohar',
+             'oniv','ofolga','oV1','oVint','oPreench','oLcheio','oLparc','oLvazio',
+             'oFrente','dNiv','dHar','dGs','dFolga','dCalcos','dIncl','dLch','dLpc',
+             'dLvz','dFrente'];
+  if (!ST){
+    ids.forEach(function(i){ $(i).textContent = '\u2014'; });
+    $('sec').innerHTML = '';
+    return;
+  }
+
+  var g = ST, r = ST.r;
+  var th = num('incl')*Math.PI/180;
+  var c1 = num('calco1');
+  var Lt_mm = g.Lt*1e3, De_mm = g.De*1e3, Di_mm = g.Di*1e3, Dc_mm = g.Dc*1e3;
+
+  if (!isFinite(th) || th <= 0 || !isFinite(c1) || c1 < 0){
+    gE.className = 'flag on err';
+    gE.textContent = 'Informe uma inclinação positiva e um calço não negativo.';
+    return;
+  }
+
+  // ---- cotas ----
+  // Alturas de calco: medidas ate a GERATRIZ INFERIOR do duto na posicao de
+  // cada apoio. Como a geratriz inferior sobe linearmente com z, cada calco
+  // vale c1 + z*sen(theta).
+  var L1_mm = g.L1*1e3, Dba_mm = g.Dba*1e3;
+  var dh  = Lt_mm*Math.sin(th);
+  var c2  = c1 + L1_mm*Math.sin(th);          // sob o arrestor, em z = L1
+  var c3  = c1 + dh;                          // extremidade alta, em z = Lt
+  // Se o calco 2 apoiar a SUPERFICIE EXTERNA do arrestor, e nao a do duto:
+  // sendo o arrestor de diametro maior, sua face inferior fica (Dba-De)/2
+  // abaixo da geratriz do duto, e o calco tem de ser mais baixo na mesma medida.
+  var c2ba = c2 - (Dba_mm - De_mm)/2;
+
+  var giB = c1, giA = c3;
+  var exB = giB + De_mm/2, exA = giA + De_mm/2;
+  var gsA = giA + De_mm;
+
+  $('oLt').textContent     = br(Lt_mm,1) + " mm";
+  $('odh').textContent     = br(dh,1) + " mm";
+  $('ocalco2').textContent = br(c3,1) + " mm";
+  $('oz2').textContent     = "z = " + br(L1_mm,0);
+  $('oz3').textContent     = "z = " + br(Lt_mm,0);
+  $('oc1').textContent     = br(c1,1) + " mm";
+  $('oc2').textContent     = br(c2,1) + " mm";
+  $('oc3').textContent     = br(c3,1) + " mm";
+  $('oc2ba').textContent   = br(c2ba,1) + " mm";
+  $('ogs').textContent     = br(gsA,1) + " mm";
+
+  // ---- nivel d'agua na camara, no Estado 0 ----
+  var Aar = r.Var/g.Lc;                        // m2
+  var fAr = Aar/(Math.PI*(g.Dc/2)*(g.Dc/2));
+  var har = alturaSeg(fAr)*(g.Dc/2)*1e3;       // mm, do topo
+  var niv = Dc_mm - har;
+  var folga = niv - gsA;
+
+  $('oAar').textContent  = br(Aar*1e6,0) + " mm²";
+  $('ohar').textContent  = br(har,1) + " mm";
+  $('oniv').textContent  = br(niv,1) + " mm";
+  $('ofolga').textContent = (folga >= 0 ? "+" : "\u2212") + br(Math.abs(folga),1) + " mm";
+
+  if (gsA > Dc_mm){
+    gE.className = 'flag on err';
+    gE.textContent = 'Com ' + br(num('incl'),1) + '° a geratriz superior na extremidade alta '
+                   + 'chega a ' + br(gsA,1) + ' mm, acima do diâmetro interno da câmara ('
+                   + br(Dc_mm,0) + ' mm). O duto não cabe.';
+  } else if (folga < 0){
+    gE.className = 'flag on err';
+    gE.textContent = 'O nível d\'água (' + br(niv,1) + ' mm) fica ABAIXO do topo do duto ('
+                   + br(gsA,1) + ' mm) na extremidade alta. O duto emerge: o cálculo do '
+                   + 'nível deixa de valer e o ensaio não representa condição submersa.';
+  } else if (folga < 20){
+    gW.className = 'flag on warn';
+    gW.textContent = 'Folga de apenas ' + br(folga,1) + ' mm entre o nível d\'água e o topo '
+                   + 'do duto. Margem apertada frente às incertezas de montagem.';
+  } else {
+    gO.className = 'flag on ok';
+    gO.textContent = 'Duto submerso com folga de ' + br(folga,1) + ' mm. Calços de '
+                   + br(c1,1) + ' e ' + br(c2,1) + ' mm.';
+  }
+
+  // ---- fluido interno ----
+  var Ri = Di_mm/2;
+  var Ai = Math.PI*Ri*Ri;
+  var V1 = Ai*g.L1*1e3;                  // mm3, volume interno do duto 1
+  // Respeita o campo editado por ultimo, em vez de preferir sempre o volume.
+  var Vw = volumeDoPar('fatV1', 'VintL', V1/1e9, 1);   // mm3
+  if (!isFinite(Vw) || Vw <= 0){ Vw = 0; }
+  var Vint = Vw/1e6;                     // litros, para exibicao
+  var Vtot_int = Ai*Lt_mm;
+
+  $('oV1').textContent   = br(V1/1e6,3) + " L";
+  $('oVint').textContent = br(Vw/1e6,3) + " L";
+  $('oPreench').textContent = br(100*Vw/Vtot_int,1) + " % do duto";
+
+  d0Global = null; thGlobal = th;
+  if (Vw > Vtot_int){
+    iW.className = 'flag on err';
+    iW.textContent = 'O volume informado excede a capacidade interna do duto ('
+                   + br(Vtot_int/1e6,2) + ' L).';
+    ['oLcheio','oLparc','oLvazio','oFrente'].forEach(function(i){ $(i).textContent = '\u2014'; });
+  } else {
+    var tt = Math.tan(th);
+    var volDe = function(d0){
+      var n = 3000, s, i, soma = 0, ds = Lt_mm/n;
+      for (i = 0; i <= n; i++){
+        s = i*ds;
+        soma += areaMolhada(d0 - s*tt, Ri)*((i === 0 || i === n) ? 0.5 : 1.0);
+      }
+      return soma*ds;
+    };
+    var lo = -Ri - 1e-6, hi = Ri + Lt_mm*tt + 1e-6, i, m;
+    for (i = 0; i < 90; i++){
+      m = 0.5*(lo+hi);
+      if (volDe(m) < Vw) lo = m; else hi = m;
+    }
+    var d0 = 0.5*(lo+hi);
+    d0Global = d0; thGlobal = th;
+    var s1 = (d0 - Ri)/tt, s2 = (d0 + Ri)/tt;
+    var Lch = Math.min(Math.max(s1,0), Lt_mm);
+    var Lvz = Lt_mm - Math.min(Math.max(s2,0), Lt_mm);
+    var Lpc = Lt_mm - Lch - Lvz;
+
+    $('oLcheio').textContent = br(Lch,0) + " mm  (" + br(100*Lch/Lt_mm,1) + " %)";
+    $('oLparc').textContent  = br(Lpc,0) + " mm  (" + br(100*Lpc/Lt_mm,1) + " %)";
+    $('oLvazio').textContent = br(Lvz,0) + " mm  (" + br(100*Lvz/Lt_mm,1) + " %)";
+    $('oFrente').textContent = (s2 >= Lt_mm) ? "além da extremidade" : br(s2,0) + " mm";
+
+    if (s2 > L1_mm && s2 < Lt_mm){
+      iW.className = 'flag on warn';
+      iW.textContent = 'A frente d\'água alcança ' + br(s2,0) + ' mm e ultrapassa o arrestor '
+                     + '(' + br(L1_mm,0) + ' mm) em ' + br(s2-L1_mm,0) + ' mm, invadindo o duto 2.';
+    } else if (s1 <= 0){
+      iW.className = 'flag on warn';
+      iW.textContent = 'Não há trecho totalmente cheio: a superfície livre corta a seção '
+                     + 'já na extremidade baixa. Aumente o volume ou a inclinação.';
+    }
+  }
+
+  // resumo replicado na aba de desenhos
+  $('dNiv').textContent    = br(niv,1) + " mm";
+  $('dHar').textContent    = br(har,1) + " mm";
+  $('dGs').textContent     = br(gsA,1) + " mm";
+  $('dFolga').textContent  = (folga >= 0 ? "+" : "\u2212") + br(Math.abs(folga),1) + " mm";
+  $('dCalcos').textContent = br(c1,1) + " / " + br(c2,1) + " / " + br(c3,1) + " mm";
+  $('dIncl').textContent   = br(num('incl'),2) + "°";
+  $('dLch').textContent    = $('oLcheio').textContent;
+  $('dLpc').textContent    = $('oLparc').textContent;
+  $('dLvz').textContent    = $('oLvazio').textContent;
+  $('dFrente').textContent = $('oFrente').textContent;
+
+  desenhaLateral(Dc_mm, g.Lc*1e3, niv, De_mm, Di_mm, Lt_mm, L1_mm,
+                 giB, giA, c1, c3, d0Global, th, Ri);
+  desenha(Dc_mm, niv, De_mm, exA);
+}
+
+
+/* ------------------------------------------------------------------
+   Vista lateral da montagem.
+
+   A camara tem razao de aspecto de cerca de 13:1 e o desnivel do duto e de
+   poucos centesimos do comprimento. Em escala real nada seria distinguivel,
+   por isso a escala VERTICAL e exagerada por um fator ajustavel. As cotas
+   impressas sao sempre as reais.
+
+   Mostra: parede da camara, bolsao de ar e agua externa ao duto, o duto
+   inclinado sobre os calcos, a agua INTERNA ao duto (superficie horizontal,
+   cortando a secao ao longo do trecho parcialmente cheio) e o arrestor.
+------------------------------------------------------------------ */
+function desenhaLateral(Dc, Lc, niv, De, Di, Lt, L1, giB, giA, c1, c2, d0, th, Ri){
+  var ex = parseFloat($('exag').value);
+  if (!isFinite(ex) || ex <= 0) ex = 1;
+
+  var M = {l:70, r:34, t:26, b:52};
+  var W = 1040, H = 300;
+  var sx = (W - M.l - M.r)/Lc;
+  var sy = Math.min((H - M.t - M.b)/(Dc*ex), sx*ex*6);
+  var y0 = H - M.b;                       // fundo da camara
+  var Y  = function(z){ return y0 - z*sy; };
+  var X  = function(x){ return M.l + x*sx; };
+
+  var g = '';
+
+  // ---- agua externa e bolsao ----
+  g += '<rect x="'+X(0)+'" y="'+Y(Dc)+'" width="'+(Lc*sx)+'" height="'+((Dc-niv)*sy)
+     + '" fill="#fdf2d9"/>';
+  g += '<rect x="'+X(0)+'" y="'+Y(niv)+'" width="'+(Lc*sx)+'" height="'+(niv*sy)
+     + '" fill="#bcd8f0"/>';
+  g += '<line x1="'+X(0)+'" y1="'+Y(niv)+'" x2="'+X(Lc)+'" y2="'+Y(niv)
+     + '" stroke="#2e5c9a" stroke-width="1.3" stroke-dasharray="6 4"/>';
+
+  // ---- parede da camara ----
+  g += '<rect x="'+X(0)+'" y="'+Y(Dc)+'" width="'+(Lc*sx)+'" height="'+(Dc*sy)
+     + '" fill="none" stroke="#1f3864" stroke-width="2"/>';
+
+  // ---- duto inclinado: quadrilatero entre geratriz inferior e superior ----
+  var zA = (Lc - Lt)/2, zB = zA + Lt;          // centrado no comprimento
+  var pts = [[X(zA), Y(giB)], [X(zB), Y(giA)],
+             [X(zB), Y(giA+De)], [X(zA), Y(giB+De)]];
+  g += '<polygon points="' + pts.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ')
+     + '" fill="#c9ced6" stroke="#4a5260" stroke-width="1.4"/>';
+
+  // ---- agua interna ao duto ----
+  // A superficie livre interna e horizontal na cota (giB + De/2 + d0*cos(th)).
+  // O contorno molhado e limitado abaixo pela parede interna inferior e acima
+  // pelo menor entre a parede interna superior e essa cota.
+  if (d0 !== null && isFinite(d0)){
+    var ct = Math.cos(th);
+    var hSup = giB + De/2 + d0*ct;             // cota da superficie livre interna
+    // Resolucao alta: com volume pequeno o trecho molhado e curto, e uma
+    // amostragem grossa deixava menos de dois pontos — o poligono nao era
+    // fechado e a agua sumia do desenho.
+    var n = 600, k, zz, ii, sup, inf, cima = [], baixo = [];
+    for (k = 0; k <= n; k++){
+      zz = zA + (zB - zA)*k/n;
+      ii = (zz - zA);                          // distancia ao longo do duto
+      inf = giB + (giA - giB)*(ii/Lt) + (De/2 - Ri);      // parede interna inferior
+      sup = inf + 2*Ri;                                    // parede interna superior
+      var topo = Math.min(sup, hSup);
+      if (topo > inf){
+        baixo.push([X(zz), Y(inf)]);
+        cima.push([X(zz), Y(topo)]);
+      }
+    }
+    if (baixo.length === 1){
+      // trecho molhado menor que o passo de amostragem: desenha um traco
+      // fino em vez de omitir a agua
+      baixo.push([baixo[0][0] + 1.5, baixo[0][1]]);
+      cima.push([cima[0][0] + 1.5, cima[0][1]]);
+    }
+    if (baixo.length > 1){
+      var poly = baixo.concat(cima.reverse());
+      g += '<polygon points="' + poly.map(function(p){ return p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ')
+         + '" fill="#4a90d9" fill-opacity="0.85" stroke="none"/>';
+      g += '<line x1="'+X(zA)+'" y1="'+Y(hSup)+'" x2="'+X(zB)+'" y2="'+Y(hSup)
+         + '" stroke="#1a4f8a" stroke-width="1" stroke-dasharray="4 3"/>';
+    }
+  }
+
+  // ---- arrestor ----
+  var zBA = zA + L1;
+  var giBA = giB + (giA - giB)*(L1/Lt);
+  g += '<rect x="'+(X(zBA)-3)+'" y="'+Y(giBA+De+3)+'" width="6" height="'+((De+6)*sy)
+     + '" fill="#8a5c00" opacity="0.85"/>';
+  g += '<text x="'+X(zBA)+'" y="'+(Y(Dc)-6)+'" font-size="10" fill="#8a5c00" '
+     + 'text-anchor="middle">arrestor</text>';
+
+  // ---- calcos: baixa, sob o arrestor e alta ----
+  var c2m = c1 + L1*Math.sin(th);
+  [[zA, c1], [zA+L1, c2m], [zB, c2]].forEach(function(a){
+    g += '<rect x="'+(X(a[0])-9)+'" y="'+Y(a[1])+'" width="18" height="'+(a[1]*sy)
+       + '" fill="#6b7580" opacity="0.55"/>';
+  });
+
+  // ---- cotas ----
+  g += '<text x="'+X(zA)+'" y="'+(y0+16)+'" font-size="10" fill="#22272e" '
+     + 'text-anchor="middle">'+c1.toFixed(1)+' mm</text>';
+  g += '<text x="'+X(zA+L1)+'" y="'+(y0+16)+'" font-size="10" fill="#22272e" '
+     + 'text-anchor="middle">'+c2m.toFixed(1)+' mm</text>';
+  g += '<text x="'+X(zB)+'" y="'+(y0+16)+'" font-size="10" fill="#22272e" '
+     + 'text-anchor="middle">'+c2.toFixed(1)+' mm</text>';
+  g += '<text x="'+X(zA+L1/2)+'" y="'+(y0+30)+'" font-size="9" fill="#6b7580" '
+     + 'text-anchor="middle">calços</text>';
+  g += '<text x="'+(X(0)-6)+'" y="'+(Y(niv)+4)+'" font-size="10" fill="#2e5c9a" '
+     + 'text-anchor="end">nível '+niv.toFixed(0)+'</text>';
+  g += '<text x="'+(X(0)-6)+'" y="'+(Y(Dc)+4)+'" font-size="10" fill="#1f3864" '
+     + 'text-anchor="end">'+Dc.toFixed(0)+' mm</text>';
+  g += '<text x="'+(X(0)-6)+'" y="'+(y0+4)+'" font-size="10" fill="#6b7580" '
+     + 'text-anchor="end">0</text>';
+  g += '<text x="'+X(Lc/2)+'" y="'+(y0+34)+'" font-size="10" fill="#6b7580" '
+     + 'text-anchor="middle">câmara: '+Lc.toFixed(0)+' mm  ·  duto: '+Lt.toFixed(0)
+     + ' mm  ·  escala vertical exagerada '+ex.toFixed(1)+'×</text>';
+
+  // ---- legenda ----
+  var lx = X(Lc) - 150, ly = Y(Dc) + 12;
+  [['#fdf2d9','bolsão'], ['#bcd8f0','água externa'],
+   ['#4a90d9','água interna'], ['#c9ced6','duto']].forEach(function(it, i){
+    g += '<rect x="'+lx+'" y="'+(ly+i*13-8)+'" width="11" height="9" fill="'+it[0]
+       + '" stroke="#8a8f98" stroke-width="0.5"/>';
+    g += '<text x="'+(lx+16)+'" y="'+(ly+i*13)+'" font-size="9.5" fill="#22272e">'+it[1]+'</text>';
+  });
+
+  $('lat').innerHTML = g;
+}
+
+
+/* Seção transversal na extremidade alta: câmara, água, bolsão e duto. */
+function desenha(Dc, niv, De, eixoA){
+  var s = 190/Dc, cx = 130, cy = 120, R = (Dc/2)*s;
+  var yTopo = cy - R;
+  var yNivel = cy + R - niv*s;
+  var rp = (De/2)*s, ypipe = cy + R - eixoA*s;
+
+  var svg = '';
+  svg += '<defs><clipPath id="cc"><circle cx="'+cx+'" cy="'+cy+'" r="'+R+'"/></clipPath></defs>';
+  svg += '<rect x="'+(cx-R)+'" y="'+yTopo+'" width="'+(2*R)+'" height="'+(yNivel-yTopo)
+       + '" fill="#fdf2d9" clip-path="url(#cc)"/>';
+  svg += '<rect x="'+(cx-R)+'" y="'+yNivel+'" width="'+(2*R)+'" height="'+(cy+R-yNivel)
+       + '" fill="#bcd8f0" clip-path="url(#cc)"/>';
+  svg += '<line x1="'+(cx-R-8)+'" y1="'+yNivel+'" x2="'+(cx+R+8)+'" y2="'+yNivel
+       + '" stroke="#2e5c9a" stroke-width="1.2" stroke-dasharray="5 3"/>';
+  svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="#1f3864" stroke-width="2"/>';
+  svg += '<circle cx="'+cx+'" cy="'+ypipe+'" r="'+rp+'" fill="#c9ced6" stroke="#4a5260" stroke-width="1.3"/>';
+  svg += '<text x="'+(cx)+'" y="'+(yTopo+14)+'" font-size="10" fill="#8a5c00" text-anchor="middle">ar</text>';
+  svg += '<text x="'+(cx+R+12)+'" y="'+(yNivel-4)+'" font-size="9.5" fill="#2e5c9a">'
+       + niv.toFixed(0)+' mm</text>';
+  $('sec').innerHTML = svg;
+}
+
+/* ============ CSV ============ */
+function cabecalho(){
+  var fA = TAB.ar ? ('tabela importada; ' + TAB.ar.length + ' pontos')
+                  : 'gas ideal (R = 287,05 J/kg.K)';
+  var fG = TAB.ag ? ('tabela importada; ' + TAB.ag.length + ' pontos')
+                  : 'modulo volumetrico (K = 2200 MPa; rho0 = 997 kg/m3)';
+  var r = ST.r;
+  return [
+    '# Camara hiperbarica - bolsao, inclinacao e montagem - LTS/COPPE-UFRJ',
+    '# Gerado em;' + new Date().toLocaleString('pt-BR'),
+    '# Modelo;tres estados isotermicos, massa conservada nos dois fluidos',
+    '#',
+    '# MASSAS ESPECIFICAS',
+    '# air;'   + fA,
+    '# water;' + fG,
+    '#',
+    '# GEOMETRIA',
+    '# Camara D interno [mm];'   + br(ST.Dc*1e3,2),
+    '# Camara comprimento [mm];' + br(ST.Lc*1e3,1),
+    '# Duto D externo [mm];'     + br(ST.De*1e3,2),
+    '# Duto espessura [mm];'     + br(ST.tw*1e3,2),
+    '# Duto L1 [mm];'            + br(ST.L1*1e3,1),
+    '# Duto L2 [mm];'            + br(ST.L2*1e3,1),
+    '# Arrestor D ext [mm];'     + br(ST.Dba*1e3,2),
+    '# Arrestor comprimento [mm];' + br(ST.Lba*1e3,1),
+    '# Temperatura [C];'         + br(ST.Tc,2),
+    '# P0 [MPa];'                + br(ST.P0,6),
+    '# P1 [MPa];'                + br(ST.P1,4),
+    '#',
+    '# MONTAGEM',
+    '# Inclinacao [graus];'      + br(num('incl'),3),
+    '# Calco 1 - extremidade baixa [mm];' + $('oc1').textContent.replace(' mm',''),
+    '# Calco 2 - sob o arrestor [mm];'    + $('oc2').textContent.replace(' mm',''),
+    '# Calco 3 - extremidade alta [mm];'  + $('oc3').textContent.replace(' mm',''),
+    '# Nivel d agua [mm];'       + $('oniv').textContent.replace(' mm',''),
+    '# Folga sobre o duto [mm];' + $('ofolga').textContent.replace(' mm',''),
+    '# Fluido interno [L];'      + $('oVint').textContent.replace(' L',''),
+    '#',
+    '# VOLUMES',
+    '# Vc [L];'        + br(ST.Vc*1e3,3),
+    '# Vtubos [L];'    + br(ST.Vtub*1e3,3),
+    '# Vfluidos [L];'  + br(ST.Vf*1e3,3),
+    '# DeltaVcol [L];' + br(ST.dV*1e3,4),
+    '#',
+    '# PONTO ADOTADO',
+    '# Var a P0 [L];'  + br(r.Var*1e3,3),
+    '# Var a P1 [L];'  + br(r.Var1*1e3,3),
+    '# P2 [MPa];'      + br(r.P2,4),
+    '# DeltaP [%];'    + br(r.dP,4),
+    '#'
+  ].join('\n') + '\n';
+}
+function varredura(){
+  var out = [], fr = [2,5,8,10,15,20,23,25,30,35,40,50], i, V, r;
+  if (!ST) return out;
+  for (i = 0; i < fr.length; i++){
+    V = fr[i]/100*ST.Vf;
+    r = tresEstados(ST, V);
+    if (!r) continue;
+    out.push({frac:fr[i], Var:V, Var1:r.Var1, Vag0:r.Vag0, Vag1:r.Vag1,
+              mAr0:r.mAr0, mAr1:r.mAr1, mAg:r.mAg, P2:r.P2, dP:r.dP,
+              Vag2:r.Vag2, Var2:r.Var2,
+              r_ar0:r.r_ar0, r_ar1:r.r_ar1, r_ar2:r.r_ar2,
+              r_ag0:r.r_ag0, r_ag1:r.r_ag1, r_ag2:r.r_ag2});
+  }
+  return out;
+}
+function baixar(nome, texto){
+  var blob = new Blob(['\ufeff' + texto], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+}
+function csvAr(){
+  if (!ST) return;
+  var s = cabecalho(), d = varredura(), i, r;
+  s += '# DADOS DO AR (fluido: air)\n';
+  s += 'Frac_fluido [%];Var_P0 [L];Var_P1 [L];Var_P2 [L];m_ar_P0 [kg];m_ar_P1 [kg];'
+     + 'rho_P0 [kg/m3];rho_P1 [kg/m3];rho_P2 [kg/m3];P2 [MPa];DeltaP [%]\n';
+  for (i = 0; i < d.length; i++){
+    r = d[i];
+    s += [br(r.frac,1), br(r.Var*1e3,3), br(r.Var1*1e3,3), br(r.Var2*1e3,3),
+          br(r.mAr0,5), br(r.mAr1,4), br(r.r_ar0,4), br(r.r_ar1,3), br(r.r_ar2,3),
+          br(r.P2,4), br(r.dP,4)].join(';') + '\n';
+  }
+  baixar('bolsao_AR.csv', s);
+}
+function csvAgua(){
+  if (!ST) return;
+  var s = cabecalho(), d = varredura(), i, r;
+  s += '# DADOS DA AGUA (fluido: water) - massa conservada nos tres estados\n';
+  s += 'Frac_fluido [%];Vagua_P0 [L];Vagua_P1 [L];Vagua_P2 [L];m_agua [kg];'
+     + 'rho_P0 [kg/m3];rho_P1 [kg/m3];rho_P2 [kg/m3];Compressao_P0_P1 [L];P2 [MPa]\n';
+  for (i = 0; i < d.length; i++){
+    r = d[i];
+    s += [br(r.frac,1), br(r.Vag0*1e3,3), br(r.Vag1*1e3,3), br(r.Vag2*1e3,3),
+          br(r.mAg,3), br(r.r_ag0,4), br(r.r_ag1,4), br(r.r_ag2,4),
+          br((r.Vag0-r.Vag1)*1e3,3), br(r.P2,4)].join(';') + '\n';
+  }
+  baixar('bolsao_AGUA.csv', s);
+}
+
+/* ============ arquivos ============ */
+function carrega(inp, sel, chave, div, reserva){
+  $(inp).addEventListener('change', function(ev){
+    var arq = ev.target.files[0];
+    if (!arq) return;
+    var fr = new FileReader();
+    fr.onload = function(e){
+      var tab = parseTabela(e.target.result, parseFloat($(sel).value));
+      var d = $(div);
+      if (!tab){
+        TAB[chave] = null;
+        d.className = 'fonte';
+        d.innerHTML = 'Arquivo <b>' + arq.name + '</b> não reconhecido. ' + reserva;
+      } else {
+        TAB[chave] = tab;
+        d.className = 'fonte tab';
+        d.innerHTML = '<b>' + arq.name + '</b> &mdash; ' + tab.length + ' pontos de '
+                    + br(tab[0][0],4) + ' a ' + br(tab[tab.length-1][0],3) + ' MPa';
+      }
+      calc();
+    };
+    fr.readAsText(arq);
+  });
+  $(sel).addEventListener('change', function(){
+    if ($(inp).files.length) $(inp).dispatchEvent(new Event('change'));
+  });
+}
+carrega('fAr','uAr','ar','srcAr','Mantido o gás ideal.');
+carrega('fAg','uAg','ag','srcAg','Mantido o módulo volumétrico.');
+
+/* ============ interacao ============ */
+// bolsao: campo relativo em PORCENTAGEM do volume de fluido -> escala 100
+ligaPar('fracAr', 'VarL',
+        function(){ var g = geometria(); return g ? g.Vf : NaN; }, 2, 2, 100);
+// fluido interno: campo relativo em MULTIPLO de V1 -> escala 1
+ligaPar('fatV1', 'VintL',
+        function(){
+          var g = geometria();
+          if (!g) return NaN;
+          return Math.PI*g.Di*g.Di/4*g.L1;      // V1 em m3
+        }, 3, 2, 1);
+
+(function(){
+  var ids = ['Dc','Lc','De','tw','L1','L2','tba','Lba','Pt','P0','Tc',
+             'fracAr','VarL','dPalvo','incl','calco1','fatV1','VintL','exag'], i;
+  for (i = 0; i < ids.length; i++){ $(ids[i]).addEventListener('input', calc); }
+})();
+$('Pref').addEventListener('change', calc);
+$('tabA').addEventListener('click', function(){
+  modo = 'A'; $('tabA').className = 'tab sel'; $('tabB').className = 'tab';
+  $('modoA').style.display = ''; $('modoB').style.display = 'none'; calc();
+});
+$('tabB').addEventListener('click', function(){
+  modo = 'B'; $('tabB').className = 'tab sel'; $('tabA').className = 'tab';
+  $('modoB').style.display = ''; $('modoA').style.display = 'none'; calc();
+});
+/* ---- navegacao entre abas ---- */
+(function(){
+  var tabs = document.querySelectorAll('.navtab'), i;
+  function mostrar(id){
+    var k, secs = document.querySelectorAll('.aba');
+    for (k = 0; k < secs.length; k++){
+      secs[k].style.display = (secs[k].id === id) ? '' : 'none';
+    }
+    for (k = 0; k < tabs.length; k++){
+      tabs[k].className = (tabs[k].getAttribute('data-aba') === id) ? 'navtab sel' : 'navtab';
+    }
+    // os SVG so tem largura conhecida quando a aba esta visivel
+    if (id === 'abaDesenhos') calc();
+  }
+  for (i = 0; i < tabs.length; i++){
+    tabs[i].addEventListener('click', function(){ mostrar(this.getAttribute('data-aba')); });
+  }
+})();
+
+$('btnAr').addEventListener('click', csvAr);
+$('btnAgua').addEventListener('click', csvAgua);
+
+calc();
+</script>
+</body>
+</html>
