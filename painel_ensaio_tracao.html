@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tratamento de ensaio de tração</title>
+<style>
+:root{
+  --paper:#E8EBEE; --surface:#FFFFFF; --ink:#16202A; --muted:#5C6B77;
+  --rule:#C8D0D7; --rule-soft:#DDE3E8;
+  --curve:#1B4F72; --fit:#C97B0C; --true:#6B3FA0; --warn:#A63A2B; --ok:#2E7D5B;
+  --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"Cascadia Mono",Consolas,"DejaVu Sans Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--curve);outline-offset:2px}
+
+header{background:var(--surface);border-bottom:1px solid var(--rule);padding:14px 22px 0}
+.titlerow{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+h1{font-size:19px;font-weight:600;margin:0;letter-spacing:-.01em}
+.specimen{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.specimen input{border:none;border-bottom:1px solid var(--rule);background:transparent;font-family:var(--mono);width:12ch;padding:1px 2px}
+nav{display:flex;gap:2px;margin-top:14px;flex-wrap:wrap}
+nav button{background:transparent;border:1px solid transparent;border-bottom:none;padding:8px 15px;cursor:pointer;color:var(--muted);border-radius:3px 3px 0 0;display:flex;align-items:baseline;gap:8px}
+nav button .n{font-family:var(--mono);font-size:11px;opacity:.65}
+nav button:hover{color:var(--ink);background:var(--rule-soft)}
+nav button[aria-selected="true"]{background:var(--paper);border-color:var(--rule);color:var(--ink);font-weight:600;margin-bottom:-1px;padding-bottom:9px}
+
+main{padding:18px 22px 60px;max-width:1600px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:18px;align-items:start}
+@media(max-width:1000px){.split{grid-template-columns:1fr}}
+
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:16px 18px}
+.card + .card{margin-top:14px}
+.card h2{font-size:14px;font-weight:600;margin:0 0 12px}
+
+.field{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:9px}
+.field label{color:var(--muted)}
+.field input,.field select{border:1px solid var(--rule);border-radius:3px;padding:4px 6px;background:var(--surface)}
+.field input[type=number],.field input[type=text]{width:12ch;font-family:var(--mono);text-align:right}
+.field select{max-width:19ch}
+.field.wide{grid-template-columns:1fr}
+.field.wide select,.field.wide input{width:100%;text-align:left}
+.check{display:flex;gap:8px;align-items:center;margin-bottom:9px}
+.check input{margin:0}
+.sub{color:var(--muted);font-family:var(--mono);font-size:12px;text-align:right;margin:-5px 0 9px}
+
+.btn{background:var(--curve);color:#fff;border:1px solid var(--curve);border-radius:3px;padding:6px 13px;cursor:pointer}
+.btn:hover{background:#153f5c}
+.btn.ghost{background:transparent;color:var(--curve)}
+.btn.ghost:hover{background:var(--rule-soft)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.drop{border:1.5px dashed var(--rule);border-radius:4px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;background:var(--surface)}
+.drop.over{border-color:var(--curve);background:#F2F7FB;color:var(--ink)}
+.drop strong{display:block;color:var(--ink);font-weight:600;margin-bottom:3px}
+
+.readout{border-top:1px solid var(--rule-soft);padding-top:10px;margin-top:4px}
+.readout dl{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin:0}
+.readout dt{color:var(--muted)}
+.readout dd{margin:0;font-family:var(--mono);text-align:right}
+.readout dd.big{font-size:15px;font-weight:600}
+
+.flag{display:flex;gap:9px;padding:9px 11px;border-radius:3px;margin-top:10px;border-left:3px solid var(--muted);background:#F3F5F7;font-size:13px}
+.flag.warn{border-left-color:var(--warn);background:#FBF1EF}
+.flag.ok{border-left-color:var(--ok);background:#EFF6F2}
+.flag .ico{font-family:var(--mono);font-weight:700;color:var(--muted)}
+.flag.warn .ico{color:var(--warn)}
+.flag.ok .ico{color:var(--ok)}
+
+.plotwrap{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:10px}
+svg.plot{display:block;width:100%;height:auto;touch-action:none}
+svg.plot text{font-family:var(--sans);font-size:11px;fill:var(--muted)}
+svg.plot text.axis{font-size:12px;fill:var(--ink)}
+svg.plot .grid{stroke:var(--rule-soft);stroke-width:1}
+svg.plot .frame{stroke:var(--rule);stroke-width:1;fill:none}
+svg.plot .handle{cursor:ew-resize}
+svg.plot .handle rect.hit{fill:transparent}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 4px 2px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:16px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+
+table.data{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12px}
+table.data th,table.data td{border:1px solid var(--rule-soft);padding:3px 7px;text-align:right;white-space:nowrap}
+table.data th{background:#F3F5F7;position:sticky;top:0;text-align:center;font-weight:600}
+table.data td.idx{color:var(--muted)}
+table.data tr.zerorow td{background:#FBF2DF;font-weight:600;color:#8A5A05}
+.scroll{max-height:360px;overflow:auto;border:1px solid var(--rule);border-radius:3px}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.hint{color:var(--muted);font-size:12.5px;margin:6px 0 0}
+textarea.code{width:100%;min-height:270px;font-family:var(--mono);font-size:12px;border:1px solid var(--rule);border-radius:3px;padding:10px;background:#FAFBFC;resize:vertical}
+.empty{color:var(--muted);padding:34px 10px;text-align:center}
+.sectiongrid{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 8px;align-items:center}
+.sectiongrid span{color:var(--muted);font-family:var(--mono);font-size:12px}
+.sectiongrid input{width:100%;font-family:var(--mono);text-align:right;border:1px solid var(--rule);border-radius:3px;padding:3px 5px}
+.gaingrid{display:grid;grid-template-columns:auto 92px minmax(0,1fr);gap:7px 9px;align-items:center}
+.gaingrid > span.h{color:var(--muted);font-size:11.5px}
+.gaingrid > span.nm{font-size:13px}
+.gaingrid input{width:100%;font-family:var(--mono);text-align:right;border:1px solid var(--rule);border-radius:3px;padding:3px 5px}
+.gaingrid input:disabled{background:#F3F5F7;color:var(--muted)}
+.gaingrid > span.rg{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titlerow">
+    <h1>Tratamento de ensaio de tração</h1>
+    <div class="specimen">corpo de prova <input id="cpName" value="CP01" spellcheck="false"></div>
+  </div>
+  <nav role="tablist">
+    <button role="tab" data-tab="0" aria-selected="true"><span class="n">1</span>Dados</button>
+    <button role="tab" data-tab="1"><span class="n">2</span>Deformação</button>
+    <button role="tab" data-tab="2"><span class="n">3</span>Curva de engenharia</button>
+    <button role="tab" data-tab="3"><span class="n">4</span>Curva verdadeira</button>
+    <button role="tab" data-tab="4"><span class="n">5</span>Exportar</button>
+  </nav>
+</header>
+
+<main>
+
+<section id="tab0">
+  <div class="split">
+    <div>
+      <div class="card">
+        <h2>Arquivo do ensaio</h2>
+        <div class="drop" id="dropA">
+          <strong>Solte o CSV aqui ou clique para escolher</strong>
+          tempo, força, deslocamento e canais de extensômetro
+        </div>
+        <input type="file" id="fileA" accept=".csv,.txt,.dat" hidden>
+        <div class="cols" style="margin-top:12px">
+          <div class="field"><label for="delimA">Separador</label>
+            <select id="delimA"><option value="auto">detectar</option><option value=",">vírgula</option><option value=";">ponto e vírgula</option><option value="tab">tabulação</option><option value=" ">espaço</option></select></div>
+          <div class="field"><label for="decA">Decimal</label>
+            <select id="decA"><option value="auto">detectar</option><option value=".">ponto</option><option value=",">vírgula</option></select></div>
+          <div class="field"><label for="hdrA">Linha do cabeçalho</label>
+            <input type="number" id="hdrA" value="1" min="0" step="1"></div>
+        </div>
+        <div id="parseInfo"></div>
+        <div id="tableA" class="scroll" style="margin-top:12px"><div class="empty">Nenhum arquivo carregado.</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Tabela corrigida</h2>
+        <p class="hint" style="margin-top:0">Apenas as colunas de interesse, já descontada a carga zero e nivelados os canais. A linha destacada é a origem interpolada em carga zero.</p>
+        <div id="corrInfo"></div>
+        <div id="tableCorr" class="scroll" style="margin-top:12px"><div class="empty">Escolha ao menos as colunas de tempo e força.</div></div>
+        <div class="btnrow"><button class="btn ghost" id="dlCorr">Baixar tabela corrigida .csv</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Colunas</h2>
+        <div id="mapA"><p class="hint">Carregue o arquivo para escolher as colunas.</p></div>
+      </div>
+      <div class="card">
+        <h2>Unidades de entrada</h2>
+        <div class="field"><label for="uForce">Força</label>
+          <select id="uForce"><option value="1">N</option><option value="1000">kN</option><option value="9.80665">kgf</option></select></div>
+        <div class="field"><label for="uClip">Abertura do clip gage</label>
+          <select id="uClip"><option value="1">mm</option><option value="0.001">µm</option></select></div>
+        <div class="field"><label for="uGage">Extensômetro</label>
+          <select id="uGage"><option value="1">adimensional</option><option value="0.000001">µε</option><option value="0.01">%</option></select></div>
+      </div>
+
+      <div class="card">
+        <h2>Ganho dos canais</h2>
+        <p class="hint" style="margin-top:0">Fator de calibração multiplicado pela coluna antes da conversão de unidade. Deixe em 1 quando a coluna já vier em unidade de engenharia; use o ganho para trabalhar direto sobre um canal em mV.</p>
+        <div class="gaingrid">
+          <span></span><span class="h">ganho</span><span class="h">faixa resultante</span>
+          <span class="nm">Força</span><input type="number" id="gForce" value="1" step="0.0001"><span class="rg" id="rgForce">—</span>
+          <span class="nm">Clip gage</span><input type="number" id="gClip" value="1" step="0.0001"><span class="rg" id="rgClip">—</span>
+          <span class="nm">Extensômetro 1</span><input type="number" id="gG1" value="1" step="0.0001"><span class="rg" id="rgG1">—</span>
+          <span class="nm">Extensômetro 2</span><input type="number" id="gG2" value="1" step="0.0001"><span class="rg" id="rgG2">—</span>
+          <span class="nm">Transversal</span><input type="number" id="gGt" value="1" step="0.0001"><span class="rg" id="rgGt">—</span>
+        </div>
+        <div id="gainFlags"></div>
+      </div>
+      <div class="card">
+        <h2>Geometria do corpo de prova</h2>
+        <p class="hint" style="margin-top:0">Largura e espessura por seção medida. A área é a média das seções preenchidas.</p>
+        <div class="sectiongrid" id="sections"></div>
+        <div class="btnrow"><button class="btn ghost" id="addSec">Adicionar seção</button></div>
+        <div class="field" style="margin-top:12px"><label for="a0man">Área manual (mm²)</label>
+          <input type="number" id="a0man" step="0.01" placeholder="auto"></div>
+        <div class="field"><label for="L0">Comprimento útil do CP (mm)</label>
+          <input type="number" id="L0" value="200" step="0.1"></div>
+        <div class="field"><label for="L0clip">Base do clip gage (mm)</label>
+          <input type="number" id="L0clip" value="25" step="0.1"></div>
+        <div class="readout"><dl>
+          <dt>Área A₀</dt><dd class="big" id="roA0">—</dd>
+          <dt>Dispersão entre seções</dt><dd id="roAsp">—</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <h2>Carga zero e origem da curva</h2>
+        <p class="hint" style="margin-top:0">Automático. A carga zero vem da média do patamar inicial; a origem é o instante em que a carga cruza zero, com as demais colunas interpoladas nesse ponto. Cada canal é nivelado por esse mesmo ponto, então a curva começa exatamente em zero.</p>
+        <div class="readout"><dl>
+          <dt>Carga zero F₀</dt><dd id="roF0">—</dd>
+          <dt>Ruído da linha de base</dt><dd id="roFsd">—</dd>
+          <dt>Limiar de início</dt><dd id="roFthr">—</dd>
+          <dt>Início do ensaio</dt><dd id="roStart">—</dd>
+          <dt>Cruzamento de carga zero</dt><dd id="roCross">—</dd>
+        </dl></div>
+        <div id="zeroFlags"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab1" hidden>
+  <div class="split">
+    <div>
+      <div class="plotwrap">
+        <svg class="plot" id="plotTime" viewBox="0 0 900 340"></svg>
+        <div class="legend" id="legTime"></div>
+      </div>
+      <div class="plotwrap" style="margin-top:14px">
+        <svg class="plot" id="plotSplice" viewBox="0 0 900 380"></svg>
+        <div class="legend" id="legSplice"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Clip gage</h2>
+        <p class="hint" style="margin-top:0">A abertura vira deformação dividida pela base do clip, definida na aba 1.</p>
+        <div class="field"><label for="compl">Complacência (mm/kN)</label><input type="number" id="compl" value="0" step="0.0001"></div>
+        <p class="hint">Deixe em zero para um clip gage de verdade. Só use se este canal for, na prática, posição do travessão.</p>
+      </div>
+      <div class="card">
+        <h2>Emenda dos canais</h2>
+        <div class="field wide"><label for="srcPri">Canal principal, do início do ensaio</label><select id="srcPri"></select></div>
+        <div class="field wide"><label for="srcSec">Canal secundário, depois da emenda</label><select id="srcSec"></select></div>
+        <div class="field"><label for="spliceF">Emendar em (% da F máx)</label><input type="number" id="spliceF" value="65" step="1" min="1" max="100"></div>
+        <div class="check"><input type="checkbox" id="spliceShift" checked><label for="spliceShift">Casar a deformação no ponto de emenda</label></div>
+        <p class="hint">Deixe o canal secundário vazio para usar um único canal em todo o ensaio.</p>
+        <div class="readout"><dl>
+          <dt>Força na emenda</dt><dd id="roSpF">—</dd>
+          <dt>Deformação na emenda</dt><dd id="roSpE">—</dd>
+          <dt>Salto corrigido</dt><dd id="roSpJump">—</dd>
+        </dl></div>
+        <div id="spliceFlags"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab2" hidden>
+  <div class="split">
+    <div>
+      <div class="plotwrap">
+        <svg class="plot" id="plotEng" viewBox="0 0 900 400"></svg>
+        <div class="legend" id="legEng"></div>
+        <p class="hint" style="padding:0 6px">Curva inteira. A faixa âmbar é o trecho do ajuste e a alça vermelha é o corte final; ambas podem ser arrastadas aqui.</p>
+      </div>
+      <div class="plotwrap" style="margin-top:14px">
+        <svg class="plot" id="plotZoom" viewBox="0 0 900 380"></svg>
+        <div class="legend" id="legZoom"></div>
+        <p class="hint" style="padding:0 6px">Detalhe do trecho elástico, para ajuste fino das alças. O eixo mostra a deformação medida, sem a correção de pé.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Canal desta aba</h2>
+        <div class="field wide"><label for="engSrc">Curva usada no ajuste e na análise</label><select id="engSrc"></select></div>
+        <p class="hint">Trocar o canal refaz o ajuste e toda a curva. A tabela abaixo dá o módulo de cada canal na mesma janela, para comparar sem precisar trocar.</p>
+        <div class="readout"><dl id="eByChan"></dl></div>
+      </div>
+
+      <div class="card">
+        <h2>Trecho linear</h2>
+        <div class="field"><label for="lin0">Início (deformação)</label><input type="number" id="lin0" step="0.00005"></div>
+        <div class="sub" id="subLin0">—</div>
+        <div class="field"><label for="lin1">Fim (deformação)</label><input type="number" id="lin1" step="0.00005"></div>
+        <div class="sub" id="subLin1">—</div>
+        <div class="btnrow"><button class="btn ghost" id="autoLin">Detectar automaticamente</button></div>
+        <div class="check" style="margin-top:12px"><input type="checkbox" id="toeOn" checked><label for="toeOn">Corrigir pé da curva</label></div>
+      </div>
+      <div class="card">
+        <h2>Último ponto do ensaio</h2>
+        <div class="field"><label for="cutE">Deformação de corte</label><input type="number" id="cutE" step="0.001"></div>
+        <p class="hint">Descarta ruptura, escorregamento ou descolamento. A faixa cortada aparece sombreada.</p>
+      </div>
+      <div class="card">
+        <h2>Critérios</h2>
+        <div class="field"><label for="offY">Deslocamento do escoamento (%)</label><input type="number" id="offY" value="0.2" step="0.05"></div>
+        <div class="field"><label for="tolProp">Tolerância de proporcionalidade (%)</label><input type="number" id="tolProp" value="0.5" step="0.1"></div>
+      </div>
+      <div class="card">
+        <h2>Resultados</h2>
+        <div class="readout"><dl>
+          <dt>Módulo E</dt><dd class="big" id="roE">—</dd>
+          <dt>R² do ajuste</dt><dd id="roR2">—</dd>
+          <dt>Pontos no ajuste</dt><dd id="roNfit">—</dd>
+          <dt>Coeficiente ν</dt><dd id="roNu">—</dd>
+          <dt>σ escoamento</dt><dd class="big" id="roSy">—</dd>
+          <dt>σ proporcionalidade</dt><dd id="roSp">—</dd>
+          <dt>Limite de resistência</dt><dd id="roUTS">—</dd>
+          <dt>Deformação na UTS</dt><dd id="roEu">—</dd>
+          <dt>σ escoamento com A₀ ±1%</dt><dd id="roSens">—</dd>
+        </dl></div>
+        <div id="engFlags"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab3" hidden>
+  <div class="split">
+    <div>
+      <div class="plotwrap">
+        <svg class="plot" id="plotTrue" viewBox="0 0 900 400"></svg>
+        <div class="legend" id="legTrue"></div>
+      </div>
+      <div class="plotwrap" style="margin-top:14px">
+        <svg class="plot" id="plotPl" viewBox="0 0 900 380"></svg>
+        <div class="legend" id="legPl"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Validade da conversão</h2>
+        <div class="check"><input type="checkbox" id="neckCut" checked><label for="neckCut">Cortar na estricção (UTS)</label></div>
+        <p class="hint">Depois da UTS a deformação deixa de ser uniforme e σ(1+e) perde sentido. Extrapole em vez de estender.</p>
+        <div id="neckFlags"></div>
+      </div>
+      <div class="card">
+        <h2>Extrapolação</h2>
+        <div class="field wide"><label for="lawSel">Lei de encruamento</label>
+          <select id="lawSel">
+            <option value="hollomon">Hollomon: σ = K·εₚⁿ</option>
+            <option value="swift">Swift: σ = K·(ε₀+εₚ)ⁿ</option>
+            <option value="none">nenhuma</option>
+          </select></div>
+        <div class="field"><label for="fitFrom">Ajustar a partir de εₚ</label><input type="number" id="fitFrom" value="0.02" step="0.005"></div>
+        <div class="field"><label for="epsMax">Estender até εₚ</label><input type="number" id="epsMax" value="1.0" step="0.1"></div>
+        <div class="readout"><dl>
+          <dt>K</dt><dd id="roK">—</dd>
+          <dt>n</dt><dd id="roN">—</dd>
+          <dt>ε₀</dt><dd id="roE0">—</dd>
+          <dt>R² do ajuste</dt><dd id="roR2p">—</dd>
+        </dl></div>
+      </div>
+      <div class="card">
+        <h2>Tabela para o Abaqus</h2>
+        <div class="field"><label for="nPts">Número de pontos</label><input type="number" id="nPts" value="25" min="4" max="200" step="1"></div>
+        <div class="field wide"><label for="spacing">Distribuição</label>
+          <select id="spacing">
+            <option value="sqrt">mais densa no início</option>
+            <option value="lin">uniforme em εₚ</option>
+            <option value="log">logarítmica</option>
+          </select></div>
+        <div id="plFlags"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab4" hidden>
+  <div class="split">
+    <div>
+      <div class="card">
+        <h2>Bloco de material</h2>
+        <textarea class="code" id="inpOut" spellcheck="false"></textarea>
+        <div class="btnrow">
+          <button class="btn" id="copyInp">Copiar bloco</button>
+          <button class="btn ghost" id="dlInp">Baixar .inp</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Curvas processadas</h2>
+        <p class="hint" style="margin-top:0">CSV com deformação e tensão de engenharia, verdadeira e plástica, já com cortes e correções aplicados.</p>
+        <div class="btnrow">
+          <button class="btn ghost" id="dlCurves">Baixar curvas .csv</button>
+          <button class="btn ghost" id="dlPl">Baixar tabela plástica .csv</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Identificação</h2>
+        <div class="field wide"><label for="matName">Nome do material</label><input type="text" id="matName" value="AISI304" style="text-align:left;width:100%"></div>
+        <div class="field"><label for="dens">Densidade (t/mm³)</label><input type="number" id="dens" value="7.9e-9" step="0.0000000001"></div>
+        <div class="check"><input type="checkbox" id="incDens" checked><label for="incDens">Incluir densidade</label></div>
+      </div>
+      <div class="card">
+        <h2>Sessão</h2>
+        <p class="hint" style="margin-top:0">Salva todas as escolhas: colunas, complacência, emenda, trecho linear, cortes e ajuste. Recarregue para reproduzir o tratamento sem refazer nada.</p>
+        <div class="btnrow">
+          <button class="btn ghost" id="saveSess">Salvar sessão</button>
+          <button class="btn ghost" id="loadSessBtn">Carregar sessão</button>
+          <input type="file" id="loadSess" accept=".json" hidden>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Resumo</h2>
+        <div class="readout"><dl id="summary"></dl></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+
+const S = {
+  raw:null, A:null, mapA:{},
+  units:{force:1, clip:1, gage:1},
+  gain:{force:1, clip:1, g1:1, g2:1, gt:1},
+  sections:[{b:'',t:''},{b:'',t:''},{b:'',t:''}],
+  A0man:null, L0:200, L0clip:25,
+  compliance:0,
+  splice:{pri:'', sec:'', atPct:65, shift:true},
+  eng:{src:'', lin0:null, lin1:null, toe:true, cut:null, off:0.2, tolProp:0.5},
+  tru:{neckCut:true, law:'hollomon', fitFrom:0.02, epsMax:1.0, nPts:25, spacing:'sqrt'},
+  mat:{name:'AISI304', dens:7.9e-9, incDens:true},
+  cp:'CP01'
+};
+let D = {};
+let activeTab = 0;
+
+const $ = id => document.getElementById(id);
+const fmt = (v,d) => (v===null||v===undefined||!isFinite(v)) ? '\u2014' : Number(v).toFixed(d===undefined?3:d);
+const okIdx = v => v!==undefined && v!==null && v!=='' && isFinite(Number(v));
+
+/* ---------- leitura ---------- */
+function detectDelim(txt){
+  const line = txt.split(/\r?\n/).find(l=>l.trim().length) || '';
+  let best=',', bc=0;
+  const cands=[';','\t',',',' '];
+  for(let i=0;i<cands.length;i++){ const n=line.split(cands[i]).length; if(n>bc){bc=n;best=cands[i];} }
+  return best;
+}
+function detectDecimal(txt, delim){
+  if(delim!==';' && delim!=='\t' && delim!==' ') return '.';
+  const body = txt.split(/\r?\n/).slice(1,80).join('\n');
+  return (body.match(/\d,\d/g)||[]).length > (body.match(/\d\.\d/g)||[]).length ? ',' : '.';
+}
+function parseCSV(txt, delimOpt, decOpt, headerRow){
+  const delim = delimOpt==='auto' ? detectDelim(txt) : (delimOpt==='tab'?'\t':delimOpt);
+  const dec = decOpt==='auto' ? detectDecimal(txt, delim) : decOpt;
+  const lines = txt.split(/\r?\n/).filter(l=>l.trim().length);
+  const hr = Math.max(0, Math.min(headerRow-1, lines.length-1));
+  const split = l => delim===' ' ? l.trim().split(/\s+/) : l.split(delim);
+  const headers = split(lines[hr]).map(function(h,i){
+    const s = h.replace(/^["']|["']$/g,'').trim();
+    return s.length ? s : 'col'+(i+1);
+  });
+  const rows=[]; let skipped=0;
+  for(let i=hr+1;i<lines.length;i++){
+    const parts = split(lines[i]);
+    if(parts.length<2){ skipped++; continue; }
+    const r = new Array(headers.length); let any=false;
+    for(let j=0;j<headers.length;j++){
+      let v=(parts[j]||'').replace(/["']/g,'').trim();
+      if(dec===','){ v=v.replace(/\./g,'').replace(',','.'); }
+      const n=parseFloat(v);
+      r[j]=isFinite(n)?n:NaN;
+      if(isFinite(n)) any=true;
+    }
+    if(any) rows.push(r); else skipped++;
+  }
+  return {headers:headers, rows:rows, delim:delim, dec:dec, skipped:skipped};
+}
+function col(file, idx){
+  if(!file || !okIdx(idx)) return null;
+  const k=Number(idx);
+  return file.rows.map(function(r){ return r[k]; });
+}
+
+/* ---------- numérico ---------- */
+function linreg(x,y){
+  let n=0,sx=0,sy=0,sxx=0,sxy=0,syy=0;
+  for(let i=0;i<x.length;i++){
+    if(!isFinite(x[i])||!isFinite(y[i])) continue;
+    n++; sx+=x[i]; sy+=y[i]; sxx+=x[i]*x[i]; sxy+=x[i]*y[i]; syy+=y[i]*y[i];
+  }
+  if(n<3) return {m:NaN,b:NaN,r2:NaN,n:n};
+  const den=n*sxx-sx*sx;
+  if(Math.abs(den)<1e-30) return {m:NaN,b:NaN,r2:NaN,n:n};
+  const m=(n*sxy-sx*sy)/den, b=(sy-m*sx)/n;
+  const sst=syy-sy*sy/n, sse=syy-b*sy-m*sxy;
+  return {m:m,b:b,r2: sst>0?Math.max(0,1-sse/sst):NaN, n:n};
+}
+function interpAt(xs,ys,x){
+  if(!xs||!xs.length) return NaN;
+  if(x<=xs[0]) return ys[0];
+  if(x>=xs[xs.length-1]) return ys[ys.length-1];
+  let lo=0,hi=xs.length-1;
+  while(hi-lo>1){ const m=(lo+hi)>>1; if(xs[m]<=x) lo=m; else hi=m; }
+  const f=(x-xs[lo])/((xs[hi]-xs[lo])||1);
+  return ys[lo]+f*(ys[hi]-ys[lo]);
+}
+function decimate(x,y,maxN){
+  const n=x.length;
+  if(n<=maxN) return {x:x,y:y};
+  const step=Math.ceil(n/maxN), ox=[], oy=[];
+  for(let i=0;i<n;i+=step){ ox.push(x[i]); oy.push(y[i]); }
+  ox.push(x[n-1]); oy.push(y[n-1]);
+  return {x:ox,y:oy};
+}
+function percentile(arr,p){
+  const a=arr.filter(isFinite).slice().sort(function(x,y){return x-y;});
+  if(!a.length) return NaN;
+  return a[Math.min(a.length-1, Math.max(0, Math.round(p*(a.length-1))))];
+}
+function maxOf(arr){
+  let m=-Infinity;
+  for(let i=0;i<arr.length;i++) if(isFinite(arr[i])&&arr[i]>m) m=arr[i];
+  return m;
+}
+function download(name,content,mime){
+  const b=new Blob([content],{type:mime||'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},0);
+}
+function flags(el,list){
+  el.innerHTML=list.map(function(f){
+    const ico = f.k==='warn' ? '!' : (f.k==='ok' ? '\u2713' : 'i');
+    return '<div class="flag '+(f.k||'')+'"><span class="ico">'+ico+'</span><span>'+f.t+'</span></div>';
+  }).join('');
+}
+
+/* ---------- plotagem ---------- */
+const NS='http://www.w3.org/2000/svg';
+let clipSeq=0;
+function mk(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function niceTicks(min,max,count){
+  if(!isFinite(min)||!isFinite(max)||min===max) return [min||0];
+  const raw=(max-min)/count, mag=Math.pow(10,Math.floor(Math.log10(raw))), norm=raw/mag;
+  const step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  const out=[]; let v=Math.ceil(min/step)*step;
+  for(;v<=max+step*1e-9 && out.length<40;v+=step) out.push(Math.abs(v)<step*1e-9?0:v);
+  return out;
+}
+function tickLabel(t){
+  const a=Math.abs(t);
+  if(a===0) return '0';
+  if(a>=10000||a<0.001) return t.toExponential(1);
+  return String(+t.toPrecision(6));
+}
+function drawPlot(svg,cfg){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  const vb=svg.getAttribute('viewBox').split(' ').map(Number);
+  const W=vb[2],H=vb[3], m={l:78,r:20,t:16,b:46};
+  const pw=W-m.l-m.r, ph=H-m.t-m.b;
+  const series=cfg.series||[];
+
+  let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;
+  for(let s=0;s<series.length;s++){
+    const sx=series[s].x, sy=series[s].y;
+    for(let i=0;i<sx.length;i++){
+      if(isFinite(sx[i])){ if(sx[i]<xmin)xmin=sx[i]; if(sx[i]>xmax)xmax=sx[i]; }
+      if(isFinite(sy[i])){ if(sy[i]<ymin)ymin=sy[i]; if(sy[i]>ymax)ymax=sy[i]; }
+    }
+  }
+  if(cfg.xmin!==undefined) xmin=cfg.xmin;
+  if(cfg.xmax!==undefined) xmax=cfg.xmax;
+  if(!isFinite(xmin)||!isFinite(xmax)){ xmin=0;xmax=1; }
+  if(!isFinite(ymin)||!isFinite(ymax)){ ymin=0;ymax=1; }
+  if(xmax<=xmin) xmax=xmin+1;
+  if(ymax<=ymin) ymax=ymin+1;
+  if(ymin>0) ymin=0;
+  const gx=(xmax-xmin)*0.03, gy=(ymax-ymin)*0.07;
+  xmin-=gx*0.4; xmax+=gx; ymax+=gy;
+
+  const X=function(v){ return m.l+(v-xmin)/(xmax-xmin)*pw; };
+  const Y=function(v){ return m.t+ph-(v-ymin)/(ymax-ymin)*ph; };
+  svg._inv = function(sx){ return xmin+(sx-m.l)/pw*(xmax-xmin); };
+
+  const g=mk('g',{},svg);
+  const xt=niceTicks(xmin,xmax,7);
+  for(let i=0;i<xt.length;i++){
+    mk('line',{'class':'grid',x1:X(xt[i]),y1:m.t,x2:X(xt[i]),y2:m.t+ph},g);
+    mk('text',{x:X(xt[i]),y:m.t+ph+16,'text-anchor':'middle'},g).textContent=tickLabel(xt[i]);
+  }
+  const yt=niceTicks(ymin,ymax,6);
+  for(let i=0;i<yt.length;i++){
+    mk('line',{'class':'grid',x1:m.l,y1:Y(yt[i]),x2:m.l+pw,y2:Y(yt[i])},g);
+    mk('text',{x:m.l-8,y:Y(yt[i])+4,'text-anchor':'end'},g).textContent=tickLabel(yt[i]);
+  }
+  const shade=cfg.shade||[];
+  for(let i=0;i<shade.length;i++){
+    const x0=X(Math.max(shade[i].x0,xmin)), x1=X(Math.min(shade[i].x1,xmax));
+    if(x1>x0) mk('rect',{x:x0,y:m.t,width:x1-x0,height:ph,fill:shade[i].color,opacity:shade[i].opacity||0.1},g);
+  }
+  const cid='clip'+(clipSeq++);
+  const clip=mk('clipPath',{id:cid},g);
+  mk('rect',{x:m.l,y:m.t,width:pw,height:ph},clip);
+  const inner=mk('g',{'clip-path':'url(#'+cid+')'},g);
+
+  for(let s=0;s<series.length;s++){
+    const d=decimate(series[s].x,series[s].y,2500);
+    let path='',pen=false;
+    for(let i=0;i<d.x.length;i++){
+      if(!isFinite(d.x[i])||!isFinite(d.y[i])){ pen=false; continue; }
+      path+=(pen?'L':'M')+X(d.x[i]).toFixed(2)+' '+Y(d.y[i]).toFixed(2)+' ';
+      pen=true;
+    }
+    if(path) mk('path',{d:path,fill:'none',stroke:series[s].color,'stroke-width':series[s].width||1.6,
+      'stroke-dasharray':series[s].dash||'','stroke-linejoin':'round',
+      opacity:series[s].opacity===undefined?1:series[s].opacity},inner);
+  }
+  const pts=cfg.points||[];
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];
+    if(!isFinite(p.x)||!isFinite(p.y)) continue;
+    mk('circle',{cx:X(p.x),cy:Y(p.y),r:4,fill:p.color,stroke:'#fff','stroke-width':1.5},inner);
+    if(p.label) mk('text',{x:X(p.x)+8,y:Y(p.y)-7,fill:p.color},inner).textContent=p.label;
+  }
+  const hs=cfg.handles||[];
+  for(let i=0;i<hs.length;i++){
+    (function(h){
+      if(!isFinite(h.x)) return;
+      const hg=mk('g',{'class':'handle'},g);
+      mk('line',{x1:X(h.x),y1:m.t,x2:X(h.x),y2:m.t+ph,stroke:h.color,'stroke-width':1.6,'stroke-dasharray':'5 3'},hg);
+      mk('rect',{x:X(h.x)-5,y:m.t,width:10,height:13,fill:h.color,rx:2},hg);
+      mk('rect',{'class':'hit',x:X(h.x)-11,y:m.t,width:22,height:ph},hg);
+      hg.addEventListener('pointerdown',function(ev){
+        ev.preventDefault();
+        const move=function(e2){
+          const r=svg.getBoundingClientRect();
+          h.onDrag(svg._inv((e2.clientX-r.left)/r.width*W));
+        };
+        const up=function(){ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); };
+        window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+      });
+    })(hs[i]);
+  }
+  mk('rect',{'class':'frame',x:m.l,y:m.t,width:pw,height:ph},g);
+  mk('text',{'class':'axis',x:m.l+pw/2,y:H-8,'text-anchor':'middle'},g).textContent=cfg.xLabel||'';
+  mk('text',{'class':'axis',x:16,y:m.t+ph/2,'text-anchor':'middle',
+    transform:'rotate(-90 16 '+(m.t+ph/2)+')'},g).textContent=cfg.yLabel||'';
+}
+function legend(el,items){
+  el.innerHTML=items.map(function(i){
+    return '<span><i style="border-top-color:'+i.color+';border-top-style:'+(i.dash?'dashed':'solid')+'"></i>'+i.label+'</span>';
+  }).join('');
+}
+function sliceTo(x,y,xmax){
+  const ox=[],oy=[];
+  for(let i=0;i<x.length;i++) if(x[i]<=xmax){ ox.push(x[i]); oy.push(y[i]); }
+  return {x:ox,y:oy};
+}
+
+/* ---------- pipeline ---------- */
+function computeArea(){
+  if(S.A0man&&S.A0man>0) return {A0:S.A0man,spread:null};
+  const v=S.sections.map(function(s){ return {b:parseFloat(s.b),t:parseFloat(s.t)}; })
+    .filter(function(s){ return isFinite(s.b)&&isFinite(s.t)&&s.b>0&&s.t>0; })
+    .map(function(s){ return s.b*s.t; });
+  if(!v.length) return {A0:null,spread:null};
+  let sum=0,mn=Infinity,mx=-Infinity;
+  for(let i=0;i<v.length;i++){ sum+=v[i]; if(v[i]<mn)mn=v[i]; if(v[i]>mx)mx=v[i]; }
+  const mean=sum/v.length;
+  return {A0:mean, spread: v.length>1 ? (mx-mn)/mean*100 : 0};
+}
+/* Carga zero: sem parametros. O comprimento do patamar inicial e medido, nao
+   assumido -- a janela vai ate o ponto em que a forca sai do piso do registro.
+   Se nao existir patamar, o proprio primeiro ponto e a referencia. */
+function computeZero(F){
+  const n=F.length;
+  const res={F0:0, sd:0, thr:NaN, idx:0, nBase:0, preamble:true};
+  if(!n) return res;
+  let mx=-Infinity, mn=Infinity;
+  for(let i=0;i<n;i++) if(isFinite(F[i])){ if(F[i]>mx)mx=F[i]; if(F[i]<mn)mn=F[i]; }
+  const span=(isFinite(mx)&&isFinite(mn))?(mx-mn):0;
+  const small=mn+0.005*span;
+  let iRise=0;
+  while(iRise<n && isFinite(F[iRise]) && F[iRise]<=small) iRise++;
+
+  let nBase, F0, sd;
+  if(iRise>=5){
+    nBase=Math.min(iRise,500);
+    let s=0,c=0;
+    for(let i=0;i<nBase;i++) if(isFinite(F[i])){ s+=F[i]; c++; }
+    F0=c?s/c:0;
+    let v=0;
+    for(let i=0;i<nBase;i++) if(isFinite(F[i])) v+=(F[i]-F0)*(F[i]-F0);
+    sd=c>1?Math.sqrt(v/(c-1)):0;
+  } else {
+    res.preamble=false;
+    nBase=1;
+    F0=isFinite(F[0])?F[0]:0;
+    sd=0;
+  }
+  const thr=F0+Math.max(5*sd, 0.002*span);
+  let idx=0;
+  for(let i=0;i<n;i++) if(isFinite(F[i])&&F[i]>thr){ idx=i; break; }
+  res.F0=F0; res.sd=sd; res.thr=thr; res.idx=idx; res.nBase=nBase;
+  return res;
+}
+function buildChannels(){
+  const A=S.A;
+  if(!A||!okIdx(S.mapA.force)) return null;
+  const Fr=col(A,S.mapA.force).map(function(v){ return v*S.gain.force*S.units.force; });
+  const t=okIdx(S.mapA.time)?col(A,S.mapA.time):Fr.map(function(_,i){ return i; });
+  const z=computeZero(Fr);
+  const F=Fr.map(function(v){ return v-z.F0; });
+
+  const raw={};
+  if(okIdx(S.mapA.clip)) raw.clip=col(A,S.mapA.clip).map(function(v){ return v*S.gain.clip*S.units.clip; });
+  if(okIdx(S.mapA.g1)) raw.g1=col(A,S.mapA.g1).map(function(v){ return v*S.gain.g1*S.units.gage; });
+  if(okIdx(S.mapA.g2)) raw.g2=col(A,S.mapA.g2).map(function(v){ return v*S.gain.g2*S.units.gage; });
+  if(okIdx(S.mapA.gt)) raw.gt=col(A,S.mapA.gt).map(function(v){ return v*S.gain.gt*S.units.gage; });
+
+  /* Origem da curva: ultimo cruzamento de carga zero antes do inicio do ensaio.
+     Os demais canais sao interpolados nesse mesmo instante, o que da um ponto
+     de referencia fisico em vez de um ponto arbitrario do preambulo. */
+  let iz=-1, frac=0;
+  if(z.idx>0){
+    for(let i=z.idx-1;i>=0;i--){ if(isFinite(F[i])&&F[i]<=0){ iz=i; break; } }
+    if(iz>=0 && iz+1<F.length){
+      const d=F[iz+1]-F[iz];
+      frac = (Math.abs(d)>1e-12) ? (0-F[iz])/d : 0;
+      if(!(frac>=0&&frac<=1)) frac=0;
+    } else iz=-1;
+  }
+  const lerp=function(arr){
+    if(iz<0||!arr) return NaN;
+    const a=arr[iz], b=arr[iz+1];
+    if(!isFinite(a)||!isFinite(b)) return isFinite(a)?a:b;
+    return a+frac*(b-a);
+  };
+
+  let tt, FF, base={}, hasZero=false, cross=null;
+  if(iz>=0){
+    hasZero=true;
+    cross={t:lerp(t), i:iz, frac:frac};
+    tt=[lerp(t)].concat(t.slice(iz+1));
+    FF=[0].concat(F.slice(iz+1));
+    for(const k in raw) base[k]=[lerp(raw[k])].concat(raw[k].slice(iz+1));
+  } else {
+    tt=t; FF=F.slice();
+    for(const k in raw) base[k]=raw[k];
+  }
+
+  /* Nivelamento: cada canal perde o seu valor no ponto de origem. */
+  const lv={}, offs={};
+  for(const k in base){
+    const off=isFinite(base[k][0])?base[k][0]:0;
+    offs[k]=off;
+    lv[k]=base[k].map(function(v){ return v-off; });
+  }
+  const F2=FF;
+
+  const ch={t:tt, F:F2, srcs:{}, zero:z, hasZero:hasZero, cross:cross, offs:offs, lev:lv};
+  const L0c=S.L0clip||25;
+  if(lv.clip) ch.srcs['clip gage']=lv.clip.map(function(v,i){ return (v - F2[i]/1000*S.compliance)/L0c; });
+  if(lv.g1) ch.srcs['extens\u00f4metro 1']=lv.g1;
+  if(lv.g2) ch.srcs['extens\u00f4metro 2']=lv.g2;
+  if(lv.gt) ch.srcs['extens\u00f4metro transversal']=lv.gt;
+  if(lv.g1&&lv.g2){
+    ch.srcs['m\u00e9dia dos extens\u00f4metros']=lv.g1.map(function(v,i){
+      const w=lv.g2[i];
+      return (isFinite(v)&&isFinite(w))?(v+w)/2:(isFinite(v)?v:w);
+    });
+  }
+  return ch;
+}
+function buildStrain(ch){
+  if(!ch) return null;
+  const names=Object.keys(ch.srcs).filter(function(k){ return k!=='extens\u00f4metro transversal'; });
+  if(!names.length) return null;
+  const pri = (S.splice.pri&&ch.srcs[S.splice.pri]&&S.splice.pri!=='extens\u00f4metro transversal') ? S.splice.pri : names[0];
+  const sec = (S.splice.sec&&ch.srcs[S.splice.sec]&&S.splice.sec!==pri) ? S.splice.sec : '';
+  const ep=ch.srcs[pri], out=ep.slice();
+  let info={pri:pri,sec:sec,Fsp:null,esp:null,jump:null,idx:null};
+  if(sec){
+    const es=ch.srcs[sec];
+    const Fmax=maxOf(ch.F);
+    const tgt=Fmax*S.splice.atPct/100;
+    let idx=-1;
+    for(let i=0;i<ch.F.length;i++){ if(ch.F[i]>=tgt){ idx=i; break; } }
+    if(idx>0){
+      let shift=0;
+      if(S.splice.shift&&isFinite(ep[idx])&&isFinite(es[idx])) shift=ep[idx]-es[idx];
+      for(let i=idx;i<out.length;i++) out[i]=isFinite(es[i])?es[i]+shift:NaN;
+      info={pri:pri,sec:sec,Fsp:ch.F[idx],esp:ep[idx],jump:shift,idx:idx};
+    }
+  }
+  return {e:out,F:ch.F,t:ch.t,trans:ch.srcs['extens\u00f4metro transversal']||null,info:info,names:names};
+}
+function buildEng(st){
+  const ar=computeArea();
+  if(!st||!ar.A0) return null;
+  const e=[],s=[],tr=[];
+  for(let i=0;i<st.e.length;i++){
+    const ee=st.e[i], ss=st.F[i]/ar.A0;
+    if(isFinite(ee)&&isFinite(ss)){ e.push(ee); s.push(ss); tr.push(st.trans?st.trans[i]:NaN); }
+  }
+  if(e.length<10) return null;
+  const eM=[e[0]],sM=[s[0]],tM=[tr[0]];
+  for(let i=1;i<e.length;i++){
+    if(e[i]>eM[eM.length-1]){ eM.push(e[i]); sM.push(s[i]); tM.push(tr[i]); }
+  }
+  return {e:eM,s:sM,trans:tM,A0:ar.A0};
+}
+
+/* detecção do trecho linear por janela deslizante */
+function autoLinear(eng){
+  if(!eng) return null;
+  const e=eng.e, s=eng.s;
+  const n=e.length;
+  if(n<12) return {e0:e[0], e1:e[n-1]};
+
+  /* Em qualquer metal o limite de proporcionalidade fica bem abaixo de 3% de
+     deformacao. Restringir a busca a essa faixa evita que o joelho e o patamar
+     plastico, que concentram a maior parte dos pontos, dominem a estatistica. */
+  let M=0;
+  while(M<n && e[M]<=0.03) M++;
+  if(M<15) M=Math.min(n, Math.max(15, Math.round(n*0.25)));
+  M=Math.min(M,n);
+  const fallback={e0:e[0], e1:e[Math.max(1,Math.round(M*0.5))]};
+  if(M<12) return fallback;
+
+  /* Passada 1: semente. A janela precisa ser curta em numero de pontos, porque
+     o trecho elastico e uma fracao minuscula do ensaio e nao se sabe de antemao
+     qual e o seu tamanho. Janela longa mistura o joelho e derruba a inclinacao. */
+  const w=Math.max(4, Math.min(12, Math.round(0.004*M)));
+  if(M<w*3) return fallback;
+
+  const slope=[];
+  for(let i=0;i<=M-w;i++) slope.push(linreg(e.slice(i,i+w), s.slice(i,i+w)).m);
+  if(slope.length<5) return fallback;
+
+  /* Filtro de mediana para tirar picos de ruido, e o maximo do resultado como
+     referencia do modulo. Percentil nao serve aqui: o trecho elastico e menos
+     de 1% das janelas, entao qualquer percentil usual cai dentro do joelho. */
+  const med=[];
+  for(let i=0;i<slope.length;i++){
+    const a=[];
+    for(let j=Math.max(0,i-2); j<=Math.min(slope.length-1,i+2); j++) if(isFinite(slope[j])) a.push(slope[j]);
+    a.sort(function(x,y){ return x-y; });
+    med.push(a.length?a[(a.length-1)>>1]:NaN);
+  }
+  let ip=-1, ref=-Infinity;
+  for(let i=0;i<med.length;i++) if(isFinite(med[i])&&med[i]>ref){ ref=med[i]; ip=i; }
+  if(!isFinite(ref)||ref<=0||ip<0) return fallback;
+
+  /* Cresce a partir do pico, nao a maior sequencia qualquer: o platao de
+     inclinacao maxima e o regime elastico. */
+  let a0=ip, a1=ip;
+  while(a0>0 && isFinite(med[a0-1]) && med[a0-1]>=0.90*ref) a0--;
+  while(a1<med.length-1 && isFinite(med[a1+1]) && med[a1+1]>=0.90*ref) a1++;
+  /* Poda a esquerda enquanto a inclinacao local ainda estiver subindo: isso e
+     curvatura residual do pe de acomodacao, que puxaria o modulo para baixo. */
+  while(a0<ip && isFinite(med[a0]) && med[a0]<0.98*ref) a0++;
+  let i0=a0, i1=Math.min(M-1, a1+w-1);
+  if(i1-i0<3){ i1=Math.min(M-1, i0+Math.max(3,w)); }
+  if(i1-i0<3) return fallback;
+
+  /* Passada 2: expande a semente enquanto os pontos continuarem sobre a reta.
+     A tolerancia e relativa a propria tensao, entao a rotina se autocalibra
+     em vez de depender de um limiar fixo. */
+  const seed=linreg(e.slice(i0,i1+1), s.slice(i0,i1+1));
+  if(!isFinite(seed.m)||seed.m<=0) return fallback;
+  const sTop=Math.abs(seed.m*e[i1]+seed.b);
+  const onLine=function(i){
+    const pred=seed.m*e[i]+seed.b;
+    const tol=Math.max(0.003*Math.abs(pred), 0.004*sTop);
+    return Math.abs(s[i]-pred)<=tol;
+  };
+  while(i1+1<M && onLine(i1+1)) i1++;
+  while(i0>0 && onLine(i0-1)) i0--;
+
+  /* Recua uma fracao do topo para nao encostar no joelho. */
+  const trim=Math.max(1, Math.round((i1-i0)*0.05));
+  i1=Math.max(i0+3, i1-trim);
+  i1=Math.min(i1, M-1);
+  if(!(e[i1]>e[i0])) return fallback;
+  return {e0:e[i0], e1:e[i1]};
+}
+
+function analyseEng(eng){
+  if(!eng) return null;
+  const e=eng.e, s=eng.s;
+  if(S.eng.lin0===null||S.eng.lin1===null||!(S.eng.lin1>S.eng.lin0)){
+    const a=autoLinear(eng);
+    if(a){ S.eng.lin0=a.e0; S.eng.lin1=a.e1; }
+  }
+  const lo=S.eng.lin0, hi=S.eng.lin1;
+  const xs=[],ys=[];
+  for(let i=0;i<e.length;i++) if(e[i]>=lo&&e[i]<=hi){ xs.push(e[i]); ys.push(s[i]); }
+  const fit=linreg(xs,ys);
+  const E=fit.m;
+  const shift=(S.eng.toe&&isFinite(E)&&E!==0)?-fit.b/E:0;
+  const ec=e.map(function(v){ return v-shift; });
+  if(S.eng.cut===null) S.eng.cut=ec[ec.length-1];
+  const cut=S.eng.cut;
+
+  const ei=[],si=[];
+  for(let i=0;i<ec.length;i++) if(ec[i]>=0&&ec[i]<=cut){ ei.push(ec[i]); si.push(s[i]); }
+  if(ei.length<5) return null;
+
+  const off=S.eng.off/100;
+  let sy=NaN,ey=NaN;
+  if(isFinite(E)){
+    for(let i=1;i<ei.length;i++){
+      const ln=E*(ei[i]-off), pv=E*(ei[i-1]-off);
+      if(si[i]<=ln&&si[i-1]>pv){
+        const f=(si[i-1]-pv)/((si[i-1]-pv)-(si[i]-ln));
+        ey=ei[i-1]+f*(ei[i]-ei[i-1]); sy=si[i-1]+f*(si[i]-si[i-1]); break;
+      }
+    }
+  }
+  const tol=S.eng.tolProp/100;
+  let sp=NaN, epr=NaN;
+  if(isFinite(E)){
+    for(let i=1;i<ei.length;i++){
+      const pred=E*ei[i];
+      if(pred>0&&Math.abs(si[i]-pred)/pred>tol){ sp=si[i-1]; epr=ei[i-1]; break; }
+    }
+  }
+  let uts=-Infinity,eu=NaN,iu=0;
+  for(let i=0;i<si.length;i++) if(si[i]>uts){ uts=si[i]; eu=ei[i]; iu=i; }
+
+  let nu=NaN;
+  if(eng.trans && eng.trans.some(isFinite)){
+    const a=[],b=[];
+    for(let i=0;i<e.length;i++) if(e[i]>=lo&&e[i]<=hi&&isFinite(eng.trans[i])){ a.push(e[i]); b.push(eng.trans[i]); }
+    const f2=linreg(a,b);
+    if(isFinite(f2.m)) nu=-f2.m;
+  }
+  return {e:ei,s:si,E:E,r2:fit.r2,nfit:fit.n,shift:shift,sy:sy,ey:ey,sp:sp,ep:epr,
+          uts:uts,eu:eu,iu:iu,nu:nu,lo:lo,hi:hi,cut:cut};
+}
+function buildTrue(an){
+  if(!an||!isFinite(an.E)) return null;
+  const end=S.tru.neckCut?an.iu:an.e.length-1;
+  const et=[],st=[];
+  for(let i=0;i<=end;i++){
+    if(an.e[i]<-1e-9) continue;
+    et.push(Math.log(1+an.e[i])); st.push(an.s[i]*(1+an.e[i]));
+  }
+  const fep=[],fsp=[];
+  for(let i=0;i<et.length;i++){
+    const p=et[i]-st[i]/an.E;
+    if(!isFinite(p)||!isFinite(st[i])) continue;
+    if(p<=1e-7) continue;
+    if(!fep.length){ fep.push(0); fsp.push(st[i]); }
+    if(p>fep[fep.length-1]+1e-7){ fep.push(p); fsp.push(st[i]); }
+  }
+  return {et:et,st:st,ep:fep,sp:fsp};
+}
+function fitLaw(tr){
+  if(!tr||S.tru.law==='none'||!tr.ep.length) return null;
+  const xs=[],ys=[];
+  for(let i=0;i<tr.ep.length;i++) if(tr.ep[i]>=S.tru.fitFrom&&tr.ep[i]>0&&tr.sp[i]>0){ xs.push(tr.ep[i]); ys.push(tr.sp[i]); }
+  if(xs.length<4) return null;
+  if(S.tru.law==='hollomon'){
+    const f=linreg(xs.map(Math.log),ys.map(Math.log));
+    return isFinite(f.m)?{law:'hollomon',K:Math.exp(f.b),n:f.m,e0:0,r2:f.r2}:null;
+  }
+  let best=null;
+  for(let e0=0;e0<=0.05;e0+=0.001){
+    const f=linreg(xs.map(function(v){ return Math.log(v+e0); }),ys.map(Math.log));
+    if(isFinite(f.r2)&&(!best||f.r2>best.r2)) best={law:'swift',K:Math.exp(f.b),n:f.m,e0:e0,r2:f.r2};
+  }
+  return best;
+}
+function buildTable(tr,law){
+  if(!tr||!tr.ep.length) return [];
+  const last=tr.ep[tr.ep.length-1];
+  const epMax=law?Math.max(S.tru.epsMax,last):last;
+  const n=Math.max(4,S.tru.nPts|0), tg=[0];
+  for(let i=1;i<n;i++){
+    const u=i/(n-1);
+    let v;
+    if(S.tru.spacing==='lin') v=u*epMax;
+    else if(S.tru.spacing==='log') v=Math.exp(Math.log(1e-4)+(Math.log(epMax)-Math.log(1e-4))*u);
+    else v=u*u*epMax;
+    tg.push(v);
+  }
+  const out=[];
+  for(let i=0;i<tg.length;i++){
+    const t=tg[i];
+    let s;
+    if(t<=last) s=interpAt(tr.ep,tr.sp,t);
+    else if(law) s = law.law==='hollomon' ? law.K*Math.pow(Math.max(t,1e-9),law.n) : law.K*Math.pow(law.e0+t,law.n);
+    else continue;
+    if(!isFinite(s)) continue;
+    if(out.length&&t<=out[out.length-1][0]+1e-9) continue;
+    out.push([t,s]);
+  }
+  if(out.length&&out[0][0]!==0) out.unshift([0,tr.sp[0]]);
+  return out;
+}
+/* A aba 3 pode trabalhar sobre o canal combinado da aba 2 ou diretamente sobre
+   um canal isolado, para comparar modulos entre extensometros e clip gage. */
+function selectedStrain(ch, st){
+  if(!st) return null;
+  if(S.eng.src && ch && ch.srcs[S.eng.src])
+    return {e:ch.srcs[S.eng.src], F:ch.F, trans:st.trans, info:st.info, names:st.names};
+  return st;
+}
+function recompute(){
+  D.ch=buildChannels();
+  D.strain=buildStrain(D.ch);
+  D.sel=selectedStrain(D.ch, D.strain);
+  D.eng=buildEng(D.sel);
+  D.an=analyseEng(D.eng);
+  D.tr=buildTrue(D.an);
+  D.law=fitLaw(D.tr);
+  D.table=buildTable(D.tr,D.law);
+}
+
+/* ---------- aba 1 ---------- */
+function renderTable(){
+  const host=$('tableA');
+  if(!S.A){ host.innerHTML='<div class="empty">Nenhum arquivo carregado.</div>'; return; }
+  const N=Math.min(120,S.A.rows.length);
+  let h='<table class="data"><thead><tr><th>#</th>';
+  for(let i=0;i<S.A.headers.length;i++) h+='<th>'+S.A.headers[i]+'</th>';
+  h+='</tr></thead><tbody>';
+  for(let i=0;i<N;i++){
+    h+='<tr><td class="idx">'+(i+1)+'</td>';
+    for(let j=0;j<S.A.rows[i].length;j++){
+      const v=S.A.rows[i][j];
+      h+='<td>'+(isFinite(v)?(+v.toPrecision(6)):'')+'</td>';
+    }
+    h+='</tr>';
+  }
+  host.innerHTML=h+'</tbody></table>';
+}
+/* Faixa de cada canal depois do ganho e da unidade, para conferir a ordem de
+   grandeza antes de qualquer calculo. */
+function gainRanges(){
+  const A=S.A, out={};
+  const spec=[['force',S.gain.force*S.units.force],
+              ['clip', S.gain.clip *S.units.clip],
+              ['g1',   S.gain.g1   *S.units.gage],
+              ['g2',   S.gain.g2   *S.units.gage],
+              ['gt',   S.gain.gt   *S.units.gage]];
+  for(let s=0;s<spec.length;s++){
+    const k=spec[s][0], f=spec[s][1];
+    if(!A||!okIdx(S.mapA[k])){ out[k]=null; continue; }
+    const a=col(A,S.mapA[k]);
+    let mn=Infinity,mx=-Infinity;
+    for(let i=0;i<a.length;i++){
+      const v=a[i]*f;
+      if(isFinite(v)){ if(v<mn)mn=v; if(v>mx)mx=v; }
+    }
+    out[k]=isFinite(mn)?{mn:mn,mx:mx}:null;
+  }
+  return out;
+}
+function updateGains(){
+  const rg=gainRanges();
+  const spec=[['force','rgForce','gForce','N',1,1],
+              ['clip','rgClip','gClip','mm',1,4],
+              ['g1','rgG1','gG1','%',100,2],
+              ['g2','rgG2','gG2','%',100,2],
+              ['gt','rgGt','gGt','%',100,2]];
+  for(let s=0;s<spec.length;s++){
+    const k=spec[s][0], r=rg[k], inp=$(spec[s][2]);
+    const mapped=!!(S.A&&okIdx(S.mapA[k]));
+    inp.disabled=!mapped;
+    if(inp!==document.activeElement) inp.value=S.gain[k];
+    let txt='\u2014';
+    if(!mapped) txt='coluna n\u00e3o escolhida';
+    else if(r) txt=fmt(r.mn*spec[s][4],spec[s][5])+' a '+fmt(r.mx*spec[s][4],spec[s][5])+' '+spec[s][3];
+    $(spec[s][1]).textContent=txt;
+  }
+  const fl=[], f=rg.force;
+  if(f){
+    const amp=Math.max(Math.abs(f.mn),Math.abs(f.mx));
+    if(amp<100) fl.push({k:'warn',t:'For\u00e7a m\u00e1xima de apenas '+fmt(amp,2)+' N. Para um ensaio de tra\u00e7\u00e3o isso \u00e9 baixo demais \u2014 confira a unidade e o ganho.'});
+    else if(amp>5e6) fl.push({k:'warn',t:'For\u00e7a m\u00e1xima de '+fmt(amp/1000,0)+' kN, alta demais para um corpo de prova. Confira a unidade e o ganho.'});
+  }
+  const gs=['g1','g2','gt'];
+  for(let i=0;i<gs.length;i++){
+    const r=rg[gs[i]];
+    if(r && Math.max(Math.abs(r.mn),Math.abs(r.mx))>1){
+      fl.push({k:'warn',t:'Um canal de extens\u00f4metro passa de 100% de deforma\u00e7\u00e3o. Provavelmente a unidade est\u00e1 errada, ou o canal saturou.'});
+      break;
+    }
+  }
+  flags($('gainFlags'),fl);
+}
+
+/* Tabela corrigida: colunas de interesse, ja sem a carga zero e ja niveladas. */
+function corrTable(){
+  const ch=D.ch;
+  if(!ch) return null;
+  const ar=computeArea();
+  const cols=[{h:'tempo (s)',a:ch.t,d:3},{h:'for\u00e7a (N)',a:ch.F,d:2}];
+  if(ar.A0) cols.push({h:'tens\u00e3o (MPa)',a:ch.F.map(function(v){ return v/ar.A0; }),d:3});
+  if(ch.lev.clip) cols.push({h:'abertura clip (mm)',a:ch.lev.clip,d:5});
+  for(const nm in ch.srcs) cols.push({h:'\u03b5 '+nm,a:ch.srcs[nm],d:7});
+  return {cols:cols, n:ch.t.length, zeroRow: ch.hasZero?0:-1};
+}
+function renderCorr(){
+  const host=$('tableCorr'), info=$('corrInfo');
+  const ct=corrTable();
+  if(!ct||!ct.n){
+    host.innerHTML='<div class="empty">Escolha ao menos as colunas de tempo e for\u00e7a.</div>';
+    flags(info,[]);
+    return;
+  }
+  const N=Math.min(120,ct.n);
+  let h='<table class="data"><thead><tr><th>#</th>';
+  for(let j=0;j<ct.cols.length;j++) h+='<th>'+ct.cols[j].h+'</th>';
+  h+='</tr></thead><tbody>';
+  for(let i=0;i<N;i++){
+    const isZ=(i===ct.zeroRow);
+    h+='<tr'+(isZ?' class="zerorow"':'')+'><td class="idx">'+(isZ?'0':String(i))+'</td>';
+    for(let j=0;j<ct.cols.length;j++){
+      const v=ct.cols[j].a[i];
+      h+='<td>'+(isFinite(v)?v.toFixed(ct.cols[j].d):'')+'</td>';
+    }
+    h+='</tr>';
+  }
+  host.innerHTML=h+'</tbody></table>';
+
+  const ch=D.ch, fl=[];
+  if(ch.hasZero){
+    fl.push({k:'ok',t:'Origem interpolada em t = '+fmt(ch.cross.t,3)+' s, entre os pontos '+
+      (ch.cross.i+1)+' e '+(ch.cross.i+2)+' do arquivo.'});
+  } else {
+    fl.push({k:'warn',t:'N\u00e3o houve cruzamento de carga zero antes do in\u00edcio: o registro j\u00e1 come\u00e7a carregado. A origem caiu no primeiro ponto do arquivo.'});
+  }
+  const off=[];
+  for(const k in ch.offs){
+    if(!isFinite(ch.offs[k])||ch.offs[k]===0) continue;
+    const nm={clip:'clip (mm)',g1:'extens\u00f4metro 1',g2:'extens\u00f4metro 2',gt:'transversal',force:'for\u00e7a (N)'}[k]||k;
+    off.push(nm+' '+(Math.abs(ch.offs[k])<1e-3?ch.offs[k].toExponential(2):fmt(ch.offs[k],5)));
+  }
+  if(off.length) fl.push({t:'Descontado de cada canal: '+off.join(', ')+'.'});
+  fl.push({t:ct.n+' linhas ap\u00f3s o tratamento, das quais as 120 primeiras aparecem acima.'});
+  flags(info,fl);
+}
+function guess(headers,pats){
+  for(let i=0;i<headers.length;i++){
+    const h=headers[i].toLowerCase();
+    for(let j=0;j<pats.length;j++) if(h.indexOf(pats[j])>=0) return i;
+  }
+  return '';
+}
+function renderMap(){
+  const host=$('mapA');
+  if(!S.A){ host.innerHTML='<p class="hint">Carregue o arquivo para escolher as colunas.</p>'; return; }
+  function opts(k){
+    let o='<option value="">\u2014</option>';
+    for(let i=0;i<S.A.headers.length;i++){
+      o+='<option value="'+i+'"'+(String(S.mapA[k])===String(i)?' selected':'')+'>'+S.A.headers[i]+'</option>';
+    }
+    return o;
+  }
+  const rows=[['time','Tempo'],['force','For\u00e7a'],['clip','Abertura do clip gage'],
+              ['g1','Extens\u00f4metro 1'],['g2','Extens\u00f4metro 2'],['gt','Extens\u00f4metro transversal']];
+  host.innerHTML=rows.map(function(r){
+    return '<div class="field wide"><label for="m_'+r[0]+'">'+r[1]+'</label><select id="m_'+r[0]+'" data-key="'+r[0]+'">'+opts(r[0])+'</select></div>';
+  }).join('');
+  const sels=host.querySelectorAll('select');
+  for(let i=0;i<sels.length;i++){
+    sels[i].addEventListener('change',function(e){
+      S.mapA[e.target.dataset.key]= e.target.value===''?undefined:Number(e.target.value);
+      S.eng.lin0=S.eng.lin1=S.eng.cut=null;
+      refresh();
+    });
+  }
+}
+function renderSections(){
+  const host=$('sections');
+  let h='<span></span><span>largura b (mm)</span><span>espessura t (mm)</span>';
+  for(let i=0;i<S.sections.length;i++){
+    h+='<span>'+(i+1)+'</span>'+
+       '<input type="number" step="0.01" data-i="'+i+'" data-k="b" value="'+S.sections[i].b+'">'+
+       '<input type="number" step="0.01" data-i="'+i+'" data-k="t" value="'+S.sections[i].t+'">';
+  }
+  host.innerHTML=h;
+  const inps=host.querySelectorAll('input');
+  for(let i=0;i<inps.length;i++){
+    inps[i].addEventListener('input',function(e){
+      S.sections[+e.target.dataset.i][e.target.dataset.k]=e.target.value;
+      refresh();
+    });
+  }
+}
+function reparse(){
+  if(S.raw===null) return;
+  S.A=parseCSV(S.raw,$('delimA').value,$('decA').value,+$('hdrA').value);
+  const H=S.A.headers;
+  S.mapA={
+    time:guess(H,['tempo','time','t (','seg','sec']),
+    force:guess(H,['for\u00e7','forc','force','carga','load','c\u00e9lula','celula']),
+    clip:guess(H,['clip','abertura','opening','cod','gage open']),
+    g1:guess(H,['gage 1','gauge 1','sg1','sg 1','ext 1','strain 1','long 1','longitudinal 1']),
+    g2:guess(H,['gage 2','gauge 2','sg2','sg 2','ext 2','strain 2','long 2','longitudinal 2']),
+    gt:guess(H,['transv','trans','lateral'])
+  };
+  S.eng.lin0=S.eng.lin1=S.eng.cut=null;
+  S.splice.pri=''; S.splice.sec='';
+  const dl = S.A.delim==='\t' ? 'tabula\u00e7\u00e3o' : S.A.delim;
+  const info=[{k:'ok',t:S.A.rows.length+' linhas v\u00e1lidas, '+S.A.headers.length+' colunas. Separador "'+dl+'", decimal "'+S.A.dec+'".'}];
+  if(S.A.skipped>0) info.push({t:S.A.skipped+' linhas ignoradas por n\u00e3o conterem n\u00fameros.'});
+  flags($('parseInfo'),info);
+  renderTable(); renderMap(); refresh();
+}
+(function(){
+  const d=$('dropA'), inp=$('fileA');
+  function take(f){
+    if(!f) return;
+    f.text().then(function(t){ S.raw=t; d.querySelector('strong').textContent=f.name; reparse(); });
+  }
+  d.addEventListener('click',function(){ inp.click(); });
+  d.addEventListener('dragover',function(e){ e.preventDefault(); d.classList.add('over'); });
+  d.addEventListener('dragleave',function(){ d.classList.remove('over'); });
+  d.addEventListener('drop',function(e){ e.preventDefault(); d.classList.remove('over'); take(e.dataTransfer.files[0]); });
+  inp.addEventListener('change',function(e){ take(e.target.files[0]); });
+})();
+['delimA','decA','hdrA'].forEach(function(id){ $(id).addEventListener('change',reparse); });
+
+/* ---------- aba 2 ---------- */
+function drawTab1(){
+  const ch=D.ch, st=D.strain;
+  if(!ch){
+    drawPlot($('plotTime'),{xLabel:'tempo (s)',yLabel:'for\u00e7a (N)'}); legend($('legTime'),[]);
+    drawPlot($('plotSplice'),{xLabel:'deforma\u00e7\u00e3o',yLabel:'for\u00e7a (N)'}); legend($('legSplice'),[]);
+    flags($('spliceFlags'),[{k:'warn',t:'Escolha ao menos a coluna de for\u00e7a e um canal de deforma\u00e7\u00e3o na aba 1.'}]);
+    return;
+  }
+  const z=ch.zero;
+  const tSeries=[{x:ch.t,y:ch.F,color:'var(--curve)'}];
+  const tShade=[];
+  const tPts=[];
+  if(z && !ch.trimmed && z.idx>0 && ch.t.length>z.idx){
+    tShade.push({x0:ch.t[0], x1:ch.t[z.idx], color:'var(--muted)', opacity:0.12});
+    tPts.push({x:ch.t[z.idx], y:ch.F[z.idx], color:'var(--warn)', label:'in\u00edcio'});
+  }
+  drawPlot($('plotTime'),{series:tSeries,points:tPts,shade:tShade,xLabel:'tempo (s)',yLabel:'for\u00e7a (N)'});
+  legend($('legTime'),[{color:'#1B4F72',label:'for\u00e7a corrigida pela carga zero'},
+                       {color:'#A63A2B',label:'in\u00edcio detectado do ensaio'}]);
+
+  const pal=['#1B4F72','#C97B0C','#6B3FA0','#2E7D5B','#A63A2B','#4E8FBF'];
+  const ser=[],leg=[]; let k=0;
+  for(const name in ch.srcs){
+    ser.push({x:ch.srcs[name],y:ch.F,color:pal[k%pal.length],width:1.2,opacity:0.7});
+    leg.push({color:pal[k%pal.length],label:name}); k++;
+  }
+  if(st){ ser.push({x:st.e,y:st.F,color:'#16202A',width:2.2}); leg.push({color:'#16202A',label:'canal combinado'}); }
+  const pts=(st&&st.info.idx!==null&&isFinite(st.info.Fsp))?[{x:st.info.esp,y:st.info.Fsp,color:'#A63A2B',label:'emenda'}]:[];
+  drawPlot($('plotSplice'),{series:ser,points:pts,xLabel:'deforma\u00e7\u00e3o',yLabel:'for\u00e7a (N)'});
+  legend($('legSplice'),leg);
+
+  if(st){
+    $('roSpF').textContent=st.info.Fsp!==null?fmt(st.info.Fsp,0)+' N':'\u2014';
+    $('roSpE').textContent=st.info.esp!==null?fmt(st.info.esp,5):'\u2014';
+    $('roSpJump').textContent=st.info.jump!==null?fmt(st.info.jump,5):'\u2014';
+    const fl=[];
+    if(st.info.jump!==null&&Math.abs(st.info.jump)>0.002)
+      fl.push({k:'warn',t:'Salto de '+fmt(st.info.jump,4)+' na emenda. Degrau grande indica que os canais j\u00e1 divergiam antes do ponto escolhido \u2014 tente emendar mais cedo.'});
+    if(!st.info.sec) fl.push({t:'Usando um canal \u00fanico em todo o ensaio.'});
+    flags($('spliceFlags'),fl);
+    function fill(id,val){
+      let o='<option value="">\u2014</option>';
+      for(let i=0;i<st.names.length;i++) o+='<option value="'+st.names[i]+'"'+(st.names[i]===val?' selected':'')+'>'+st.names[i]+'</option>';
+      $(id).innerHTML=o;
+    }
+    fill('srcPri',S.splice.pri||st.info.pri);
+    fill('srcSec',S.splice.sec);
+  }
+}
+
+/* ---------- aba 3 ---------- */
+function drawTab2(){
+  const an=D.an, eng=D.eng;
+  if(!an||!eng||!isFinite(an.E)){
+    drawPlot($('plotZoom'),{xLabel:'deforma\u00e7\u00e3o medida',yLabel:'tens\u00e3o (MPa)'});
+    drawPlot($('plotEng'),{xLabel:'deforma\u00e7\u00e3o de engenharia',yLabel:'tens\u00e3o de engenharia (MPa)'});
+    legend($('legZoom'),[]); legend($('legEng'),[]);
+    flags($('engFlags'),[{k:'warn',t:'Faltam dados. Confira as colunas de for\u00e7a e deforma\u00e7\u00e3o, a \u00e1rea e a base de medida.'}]);
+    return;
+  }
+  const E=an.E, lo=an.lo, hi=an.hi, shift=an.shift, cut=an.cut;
+  const handLo={x:lo,color:'var(--fit)',onDrag:function(v){ S.eng.lin0=Math.max(0,Math.min(v,S.eng.lin1-1e-6)); refresh(); }};
+  const handHi={x:hi,color:'var(--fit)',onDrag:function(v){ S.eng.lin1=Math.max(S.eng.lin0+1e-6,v); refresh(); }};
+  const handCut={x:cut,color:'var(--warn)',onDrag:function(v){ S.eng.cut=Math.max(0,v); refresh(); }};
+
+  /* curva inteira, com a faixa do ajuste e o corte */
+  const eC=eng.e.map(function(v){ return v-shift; });
+  const off=S.eng.off/100;
+  const offEnd=isFinite(an.ey)?an.ey*1.5:cut*0.2;
+  drawPlot($('plotEng'),{
+    series:[{x:eC,y:eng.s,color:'#C8D0D7',width:1.2},
+            {x:an.e,y:an.s,color:'var(--curve)',width:1.8},
+            {x:[off,off+offEnd],y:[0,E*offEnd],color:'var(--fit)',dash:'2 4',width:1.2}],
+    points:[{x:an.ey,y:an.sy,color:'var(--fit)',label:'\u03c3'+S.eng.off},
+            {x:an.ep,y:an.sp,color:'var(--ok)',label:'\u03c3 prop'},
+            {x:an.eu,y:an.uts,color:'var(--true)',label:'UTS'}],
+    handles:[{x:lo-shift,color:'var(--fit)',onDrag:function(v){ S.eng.lin0=Math.max(0,Math.min(v+shift,S.eng.lin1-1e-6)); refresh(); }},
+             {x:hi-shift,color:'var(--fit)',onDrag:function(v){ S.eng.lin1=Math.max(S.eng.lin0+1e-6,v+shift); refresh(); }},
+             handCut],
+    shade:[{x0:lo-shift,x1:hi-shift,color:'var(--fit)',opacity:0.16},
+           {x0:cut,x1:maxOf(eC),color:'var(--warn)',opacity:0.09}],
+    xLabel:'deforma\u00e7\u00e3o de engenharia', yLabel:'tens\u00e3o de engenharia (MPa)'
+  });
+  legend($('legEng'),[{color:'#1B4F72',label:'curva usada'},{color:'#C8D0D7',label:'dados completos'},
+    {color:'#C97B0C',label:'faixa do ajuste'},{color:'#A63A2B',dash:true,label:'corte'}]);
+
+  /* detalhe elastico */
+  const zmax=Math.max(hi*2.2, (isFinite(an.ey)?an.ey+shift:hi*3)*1.4, hi*1.5);
+  const z=sliceTo(eng.e,eng.s,zmax);
+  const zin=[],zis=[];
+  for(let i=0;i<eng.e.length;i++) if(eng.e[i]>=lo&&eng.e[i]<=hi){ zin.push(eng.e[i]); zis.push(eng.s[i]); }
+  const bInt=-E*shift;
+  drawPlot($('plotZoom'),{
+    series:[{x:z.x,y:z.y,color:'var(--curve)',width:1.8},
+            {x:zin,y:zis,color:'var(--fit)',width:3.4,opacity:0.5},
+            {x:[0,zmax],y:[bInt,E*zmax+bInt],color:'var(--fit)',dash:'6 4',width:1.4}],
+    shade:[{x0:lo,x1:hi,color:'var(--fit)',opacity:0.10}],
+    handles:[handLo,handHi], xmin:0, xmax:zmax,
+    xLabel:'deforma\u00e7\u00e3o medida (detalhe do trecho el\u00e1stico)', yLabel:'tens\u00e3o (MPa)'
+  });
+  legend($('legZoom'),[{color:'#1B4F72',label:'curva'},{color:'#C97B0C',label:'pontos usados no ajuste'},
+                       {color:'#C97B0C',dash:true,label:'reta ajustada'}]);
+
+  /* seletor de canal e comparacao de modulo */
+  (function(){
+    const ch=D.ch;
+    let o='<option value=""'+(S.eng.src===''?' selected':'')+'>canal combinado (aba 2)</option>';
+    const rows=[];
+    if(ch){
+      for(const nm in ch.srcs){
+        if(nm==='extens\u00f4metro transversal') continue;
+        o+='<option value="'+nm+'"'+(S.eng.src===nm?' selected':'')+'>'+nm+'</option>';
+        const xs=[],ys=[];
+        const arr=ch.srcs[nm];
+        for(let i=0;i<arr.length;i++){
+          const ee=arr[i], ss=ch.F[i]/eng.A0;
+          if(isFinite(ee)&&isFinite(ss)&&ee>=lo&&ee<=hi){ xs.push(ee); ys.push(ss); }
+        }
+        const f=linreg(xs,ys);
+        rows.push([nm, isFinite(f.m)?(fmt(f.m/1000,1)+' GPa'):'\u2014', isFinite(f.r2)?fmt(f.r2,4):'']);
+      }
+    }
+    $('engSrc').innerHTML=o;
+    $('eByChan').innerHTML=rows.map(function(r){
+      return '<dt>'+r[0]+'</dt><dd>'+r[1]+(r[2]?' <span style="color:var(--muted)">R\u00b2 '+r[2]+'</span>':'')+'</dd>';
+    }).join('') || '<dt>sem canais</dt><dd>\u2014</dd>';
+  })();
+
+  $('roE').textContent=isFinite(E)?fmt(E/1000,1)+' GPa':'\u2014';
+  $('roR2').textContent=fmt(an.r2,5);
+  $('roNfit').textContent=an.nfit||'\u2014';
+  $('roNu').textContent=isFinite(an.nu)?fmt(an.nu,3):'\u2014';
+  $('roSy').textContent=isFinite(an.sy)?fmt(an.sy,1)+' MPa':'\u2014';
+  $('roSp').textContent=isFinite(an.sp)?fmt(an.sp,1)+' MPa':'\u2014';
+  $('roUTS').textContent=isFinite(an.uts)?fmt(an.uts,1)+' MPa':'\u2014';
+  $('roEu').textContent=isFinite(an.eu)?fmt(an.eu*100,2)+' %':'\u2014';
+  $('roSens').textContent=isFinite(an.sy)?fmt(an.sy/1.01,1)+' \u2013 '+fmt(an.sy/0.99,1)+' MPa':'\u2014';
+  if($('lin0')!==document.activeElement) $('lin0').value=+lo.toFixed(6);
+  if($('lin1')!==document.activeElement) $('lin1').value=+hi.toFixed(6);
+  if($('cutE')!==document.activeElement) $('cutE').value=+cut.toFixed(5);
+  $('subLin0').textContent='\u2248 '+fmt(interpAt(eng.e,eng.s,lo),1)+' MPa';
+  $('subLin1').textContent='\u2248 '+fmt(interpAt(eng.e,eng.s,hi),1)+' MPa';
+
+  const fl=[];
+  if(!isFinite(an.r2)) fl.push({k:'warn',t:'Poucos pontos no intervalo. Alargue o trecho linear.'});
+  else if(an.r2<0.999) fl.push({k:'warn',t:'R\u00b2 de '+fmt(an.r2,5)+' com '+an.nfit+' pontos. Afaste o limite superior do joelho da curva.'});
+  else fl.push({k:'ok',t:'Ajuste consistente: R\u00b2 = '+fmt(an.r2,5)+' com '+an.nfit+' pontos.'});
+  if(Math.abs(shift)>0.002) fl.push({k:'warn',t:'Corre\u00e7\u00e3o de p\u00e9 de '+fmt(shift,4)+'. Valor alto sugere acomoda\u00e7\u00e3o longa ou escorregamento na garra.'});
+  if(isFinite(an.nu)&&(an.nu<0.2||an.nu>0.4)) fl.push({k:'warn',t:'\u03bd = '+fmt(an.nu,3)+', fora da faixa usual de metais. Confira o canal transversal.'});
+  if(an.iu>=an.e.length-3) fl.push({k:'warn',t:'A UTS caiu no fim dos dados. O ensaio pode ter parado antes da estric\u00e7\u00e3o.'});
+  if(isFinite(an.sp)&&isFinite(an.sy)&&an.sp>an.sy) fl.push({k:'warn',t:'Limite de proporcionalidade acima do escoamento. Revise a toler\u00e2ncia.'});
+  flags($('engFlags'),fl);
+}
+
+/* ---------- aba 4 ---------- */
+function drawTab3(){
+  const an=D.an,tr=D.tr,law=D.law,tab=D.table;
+  if(!tr){
+    drawPlot($('plotTrue'),{xLabel:'deforma\u00e7\u00e3o',yLabel:'tens\u00e3o (MPa)'});
+    drawPlot($('plotPl'),{xLabel:'deforma\u00e7\u00e3o pl\u00e1stica',yLabel:'tens\u00e3o verdadeira (MPa)'});
+    legend($('legTrue'),[]); legend($('legPl'),[]);
+    return;
+  }
+  drawPlot($('plotTrue'),{
+    series:[{x:an.e,y:an.s,color:'#9FB3C2',width:1.5},{x:tr.et,y:tr.st,color:'var(--true)',width:2}],
+    points:[{x:Math.log(1+an.eu),y:an.uts*(1+an.eu),color:'var(--warn)',label:'estric\u00e7\u00e3o'}],
+    xLabel:'deforma\u00e7\u00e3o', yLabel:'tens\u00e3o (MPa)'
+  });
+  legend($('legTrue'),[{color:'#9FB3C2',label:'engenharia'},{color:'#6B3FA0',label:'verdadeira'},
+                       {color:'#A63A2B',label:'limite de validade'}]);
+
+  const ser=[{x:tr.ep,y:tr.sp,color:'var(--true)',width:2}];
+  if(tab.length){
+    const xs=[],ys=[];
+    for(let i=0;i<tab.length;i++){ xs.push(tab[i][0]); ys.push(tab[i][1]); }
+    ser.push({x:xs,y:ys,color:'var(--fit)',dash:'5 4',width:1.6});
+  }
+  drawPlot($('plotPl'),{series:ser,xLabel:'deforma\u00e7\u00e3o pl\u00e1stica verdadeira',yLabel:'tens\u00e3o verdadeira (MPa)'});
+  legend($('legPl'),[{color:'#6B3FA0',label:'dados do ensaio'},{color:'#C97B0C',dash:true,label:'tabela exportada'}]);
+
+  $('roK').textContent=law?fmt(law.K,1)+' MPa':'\u2014';
+  $('roN').textContent=law?fmt(law.n,4):'\u2014';
+  $('roE0').textContent=law?fmt(law.e0,4):'\u2014';
+  $('roR2p').textContent=law?fmt(law.r2,4):'\u2014';
+
+  flags($('neckFlags'), S.tru.neckCut
+    ? [{k:'ok',t:'Curva verdadeira limitada ao regime de deforma\u00e7\u00e3o uniforme.'}]
+    : [{k:'warn',t:'Convers\u00e3o estendida al\u00e9m da UTS. Os pontos depois da estric\u00e7\u00e3o n\u00e3o representam o material.'}]);
+
+  const pf=[];
+  if(tab.length<4) pf.push({k:'warn',t:'Poucos pontos na tabela.'});
+  else{
+    let mono=true,drop=false;
+    for(let i=1;i<tab.length;i++){ if(tab[i][0]<=tab[i-1][0]) mono=false; if(tab[i][1]<tab[i-1][1]) drop=true; }
+    if(!mono) pf.push({k:'warn',t:'Deforma\u00e7\u00e3o pl\u00e1stica n\u00e3o estritamente crescente. O Abaqus vai rejeitar.'});
+    else pf.push({k:'ok',t:tab.length+' pontos, \u03b5p crescente de 0 a '+fmt(tab[tab.length-1][0],3)+'.'});
+    if(drop) pf.push({k:'warn',t:'A tens\u00e3o decresce em algum trecho. Amolecimento \u00e9 aceito, mas confirme se \u00e9 f\u00edsico.'});
+  }
+  flags($('plFlags'),pf);
+}
+
+/* ---------- aba 5 ---------- */
+function buildInp(){
+  const an=D.an,tab=D.table;
+  if(!an||!tab||!tab.length) return '** Sem dados processados.';
+  const nu=isFinite(an.nu)?an.nu:0.3;
+  const L=[];
+  L.push('** '+S.cp+' -- painel de tratamento de ensaio de tracao');
+  L.push('** unidades: mm, N, MPa, t/mm^3');
+  L.push('** A0 = '+fmt(D.eng.A0,3)+' mm2   L0 = '+fmt(S.L0,1)+' mm');
+  L.push('** E = '+fmt(an.E,1)+' MPa (R2 = '+fmt(an.r2,5)+', '+an.nfit+' pontos)');
+  L.push('** sigma_'+S.eng.off+' = '+fmt(an.sy,1)+' MPa   UTS = '+fmt(an.uts,1)+' MPa');
+  if(D.law) L.push('** encruamento '+D.law.law+': K = '+fmt(D.law.K,1)+' MPa, n = '+fmt(D.law.n,4)+', R2 = '+fmt(D.law.r2,4));
+  if(!isFinite(an.nu)) L.push('** ATENCAO: Poisson nao medido, adotado 0.3');
+  L.push('*MATERIAL, NAME='+S.mat.name);
+  if(S.mat.incDens){ L.push('*DENSITY'); L.push(String(S.mat.dens)+','); }
+  L.push('*ELASTIC');
+  L.push(fmt(an.E,1)+', '+fmt(nu,4));
+  L.push('*PLASTIC');
+  for(let i=0;i<tab.length;i++) L.push(fmt(tab[i][1],2)+', '+tab[i][0].toFixed(6));
+  return L.join('\n');
+}
+function drawTab4(){
+  $('inpOut').value=buildInp();
+  const an=D.an;
+  const rows=an?[
+    ['Corpo de prova',S.cp],
+    ['\u00c1rea A\u2080',fmt(D.eng.A0,3)+' mm\u00b2'],
+    ['M\u00f3dulo E',fmt(an.E/1000,1)+' GPa'],
+    ['Coeficiente \u03bd',isFinite(an.nu)?fmt(an.nu,3):'n\u00e3o medido'],
+    ['\u03c3 escoamento',fmt(an.sy,1)+' MPa'],
+    ['Limite de resist\u00eancia',fmt(an.uts,1)+' MPa'],
+    ['Pontos na tabela',String(D.table.length)]
+  ]:[['\u2014','sem dados']];
+  $('summary').innerHTML=rows.map(function(r){ return '<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>'; }).join('');
+}
+
+/* ---------- refresh ---------- */
+function refresh(){
+  const ar=computeArea();
+  $('roA0').textContent=ar.A0?fmt(ar.A0,3)+' mm\u00b2':'\u2014';
+  $('roAsp').textContent=(ar.spread===null||ar.spread===undefined)?'\u2014':fmt(ar.spread,2)+' %';
+  recompute();
+  const z=D.ch?D.ch.zero:null;
+  if(z){
+    $('roF0').textContent=fmt(z.F0,2)+' N';
+    $('roFsd').textContent='\u00b1 '+fmt(z.sd,2)+' N';
+    $('roFthr').textContent=fmt(z.thr,2)+' N';
+    $('roStart').textContent = z.idx>0 ? ('ponto '+(z.idx+1)+' do arquivo') : 'primeiro ponto';
+    $('roCross').textContent = D.ch.hasZero ? ('t = '+fmt(D.ch.cross.t,3)+' s') : 'n\u00e3o inserido';
+    const zf=[];
+    if(!z.preamble) zf.push({k:'warn',t:'O registro n\u00e3o tem patamar de carga zero: come\u00e7a j\u00e1 carregando. A refer\u00eancia passou a ser o primeiro ponto do arquivo.'});
+    else if(z.idx===0) zf.push({k:'warn',t:'Nenhum ponto ultrapassou o limiar de in\u00edcio. Confira a coluna de for\u00e7a.'});
+    else zf.push({k:'ok',t:'Patamar de '+z.nBase+' pontos, com in\u00edcio no ponto '+(z.idx+1)+'.'});
+    flags($('zeroFlags'),zf);
+  } else {
+    $('roF0').textContent=$('roFsd').textContent=$('roFthr').textContent=$('roStart').textContent=$('roCross').textContent='\u2014';
+    flags($('zeroFlags'),[]);
+  }
+  updateGains();
+  if(activeTab===0) renderCorr();
+  if(activeTab===1) drawTab1();
+  if(activeTab===2) drawTab2();
+  if(activeTab===3) drawTab3();
+  if(activeTab===4) drawTab4();
+}
+function showTab(i){
+  activeTab=i;
+  const btns=document.querySelectorAll('nav button');
+  for(let j=0;j<btns.length;j++) btns[j].setAttribute('aria-selected', j===i?'true':'false');
+  for(let j=0;j<5;j++) $('tab'+j).hidden=(j!==i);
+  refresh();
+}
+(function(){
+  const btns=document.querySelectorAll('nav button');
+  for(let i=0;i<btns.length;i++){
+    btns[i].addEventListener('click',function(e){ showTab(+e.currentTarget.dataset.tab); });
+  }
+})();
+
+/* ---------- controles ---------- */
+$('addSec').addEventListener('click',function(){ S.sections.push({b:'',t:''}); renderSections(); });
+$('a0man').addEventListener('input',function(e){ S.A0man=e.target.value===''?null:parseFloat(e.target.value); refresh(); });
+$('L0').addEventListener('input',function(e){ S.L0=parseFloat(e.target.value)||200; refresh(); });
+$('L0clip').addEventListener('input',function(e){ S.L0clip=parseFloat(e.target.value)||25; S.eng.lin0=S.eng.lin1=S.eng.cut=null; refresh(); });
+$('cpName').addEventListener('input',function(e){ S.cp=e.target.value; });
+$('uForce').addEventListener('change',function(e){ S.units.force=parseFloat(e.target.value); S.eng.lin0=S.eng.lin1=null; refresh(); });
+$('uClip').addEventListener('change',function(e){ S.units.clip=parseFloat(e.target.value); S.eng.lin0=S.eng.lin1=S.eng.cut=null; refresh(); });
+$('uGage').addEventListener('change',function(e){ S.units.gage=parseFloat(e.target.value); S.eng.lin0=S.eng.lin1=S.eng.cut=null; refresh(); });
+[['gForce','force'],['gClip','clip'],['gG1','g1'],['gG2','g2'],['gGt','gt']].forEach(function(p){
+  $(p[0]).addEventListener('input',function(e){
+    const v=parseFloat(e.target.value);
+    S.gain[p[1]] = isFinite(v)&&v!==0 ? v : 1;
+    S.eng.lin0=S.eng.lin1=S.eng.cut=null;
+    refresh();
+  });
+});
+$('dlCorr').addEventListener('click',function(){
+  const ct=corrTable();
+  if(!ct||!ct.n) return;
+  const L=[ct.cols.map(function(c){ return c.h; }).join(';')];
+  for(let i=0;i<ct.n;i++){
+    const r=[];
+    for(let j=0;j<ct.cols.length;j++){
+      const v=ct.cols[j].a[i];
+      r.push(isFinite(v)?v.toFixed(ct.cols[j].d):'');
+    }
+    L.push(r.join(';'));
+  }
+  download(S.cp+'_tabela_corrigida.csv',L.join('\n'),'text/csv');
+});
+$('engSrc').addEventListener('change',function(e){ S.eng.src=e.target.value; S.eng.lin0=S.eng.lin1=S.eng.cut=null; refresh(); });
+$('compl').addEventListener('input',function(e){ S.compliance=parseFloat(e.target.value)||0; refresh(); });
+$('srcPri').addEventListener('change',function(e){ S.splice.pri=e.target.value; S.eng.lin0=S.eng.lin1=S.eng.cut=null; refresh(); });
+$('srcSec').addEventListener('change',function(e){ S.splice.sec=e.target.value; refresh(); });
+$('spliceF').addEventListener('input',function(e){ S.splice.atPct=parseFloat(e.target.value)||65; refresh(); });
+$('spliceShift').addEventListener('change',function(e){ S.splice.shift=e.target.checked; refresh(); });
+$('lin0').addEventListener('input',function(e){ const v=parseFloat(e.target.value); if(isFinite(v)){ S.eng.lin0=v; refresh(); } });
+$('lin1').addEventListener('input',function(e){ const v=parseFloat(e.target.value); if(isFinite(v)){ S.eng.lin1=v; refresh(); } });
+$('cutE').addEventListener('input',function(e){ const v=parseFloat(e.target.value); if(isFinite(v)){ S.eng.cut=v; refresh(); } });
+$('toeOn').addEventListener('change',function(e){ S.eng.toe=e.target.checked; refresh(); });
+$('offY').addEventListener('input',function(e){ S.eng.off=parseFloat(e.target.value)||0.2; refresh(); });
+$('tolProp').addEventListener('input',function(e){ S.eng.tolProp=parseFloat(e.target.value)||0.5; refresh(); });
+$('autoLin').addEventListener('click',function(){
+  const a=autoLinear(D.eng);
+  if(a){ S.eng.lin0=a.e0; S.eng.lin1=a.e1; refresh(); }
+});
+$('neckCut').addEventListener('change',function(e){ S.tru.neckCut=e.target.checked; refresh(); });
+$('lawSel').addEventListener('change',function(e){ S.tru.law=e.target.value; refresh(); });
+$('fitFrom').addEventListener('input',function(e){ S.tru.fitFrom=parseFloat(e.target.value)||0.02; refresh(); });
+$('epsMax').addEventListener('input',function(e){ S.tru.epsMax=parseFloat(e.target.value)||1; refresh(); });
+$('nPts').addEventListener('input',function(e){ S.tru.nPts=parseInt(e.target.value,10)||25; refresh(); });
+$('spacing').addEventListener('change',function(e){ S.tru.spacing=e.target.value; refresh(); });
+$('matName').addEventListener('input',function(e){ S.mat.name=e.target.value; drawTab4(); });
+$('dens').addEventListener('input',function(e){ S.mat.dens=parseFloat(e.target.value)||7.9e-9; drawTab4(); });
+$('incDens').addEventListener('change',function(e){ S.mat.incDens=e.target.checked; drawTab4(); });
+$('copyInp').addEventListener('click',function(){
+  const ta=$('inpOut'); ta.select(); document.execCommand('copy');
+  const b=$('copyInp'), old=b.textContent; b.textContent='Copiado';
+  setTimeout(function(){ b.textContent=old; },1200);
+});
+$('dlInp').addEventListener('click',function(){ download(S.cp+'_material.inp',buildInp()); });
+$('dlCurves').addEventListener('click',function(){
+  const an=D.an,tr=D.tr;
+  if(!an||!tr) return;
+  const L=['e_eng;s_eng_MPa;e_true;s_true_MPa'];
+  for(let i=0;i<an.e.length;i++){
+    const et=i<tr.et.length?tr.et[i].toFixed(8):'';
+    const st=i<tr.st.length?tr.st[i].toFixed(4):'';
+    L.push([an.e[i].toFixed(8),an.s[i].toFixed(4),et,st].join(';'));
+  }
+  download(S.cp+'_curvas.csv',L.join('\n'),'text/csv');
+});
+$('dlPl').addEventListener('click',function(){
+  if(!D.table||!D.table.length) return;
+  const L=['s_true_MPa;eps_plastic'];
+  for(let i=0;i<D.table.length;i++) L.push(D.table[i][1].toFixed(4)+';'+D.table[i][0].toFixed(8));
+  download(S.cp+'_plastico.csv',L.join('\n'),'text/csv');
+});
+$('saveSess').addEventListener('click',function(){
+  const o=JSON.parse(JSON.stringify(S));
+  delete o.raw; delete o.A;
+  o.cp=$('cpName').value;
+  download((o.cp||'sessao')+'_sessao.json',JSON.stringify(o,null,2),'application/json');
+});
+$('loadSessBtn').addEventListener('click',function(){ $('loadSess').click(); });
+$('loadSess').addEventListener('change',function(e){
+  const f=e.target.files[0];
+  if(!f) return;
+  f.text().then(function(t){
+    try{
+      const o=JSON.parse(t);
+      const keepRaw=S.raw, keepA=S.A;
+      for(const k in o) S[k]=o[k];
+      S.raw=keepRaw; S.A=keepA;
+      $('cpName').value=S.cp||'CP01';
+      $('L0').value=S.L0; $('L0clip').value=S.L0clip;
+      $('a0man').value=(S.A0man===null||S.A0man===undefined)?'':S.A0man;
+      $('compl').value=S.compliance;
+      $('spliceF').value=S.splice.atPct;
+      $('spliceShift').checked=S.splice.shift;
+      $('offY').value=S.eng.off; $('tolProp').value=S.eng.tolProp; $('toeOn').checked=S.eng.toe;
+      $('neckCut').checked=S.tru.neckCut; $('lawSel').value=S.tru.law;
+      $('fitFrom').value=S.tru.fitFrom; $('epsMax').value=S.tru.epsMax;
+      $('nPts').value=S.tru.nPts; $('spacing').value=S.tru.spacing;
+      $('matName').value=S.mat.name; $('dens').value=S.mat.dens; $('incDens').checked=S.mat.incDens;
+      $('uForce').value=String(S.units.force); $('uClip').value=String(S.units.clip); $('uGage').value=String(S.units.gage);
+      if(!S.gain) S.gain={force:1,clip:1,g1:1,g2:1,gt:1};
+      $('gForce').value=S.gain.force; $('gClip').value=S.gain.clip;
+      $('gG1').value=S.gain.g1; $('gG2').value=S.gain.g2; $('gGt').value=S.gain.gt;
+      renderSections(); renderMap(); refresh();
+    }catch(err){
+      alert('N\u00e3o consegui ler a sess\u00e3o: '+err.message);
+    }
+  });
+});
+
+renderSections();
+renderMap();
+refresh();
+</script>
+</body>
+</html>
